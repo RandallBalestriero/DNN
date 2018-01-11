@@ -1,0 +1,1 @@
+python run_ortho.py DATASET LEARNING_RATE MODEL_No GPU_No
