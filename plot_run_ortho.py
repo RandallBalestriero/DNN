@@ -6,10 +6,10 @@ label_size = 16
 mpl.rcParams['xtick.labelsize'] = label_size 
 mpl.rcParams['ytick.labelsize'] = label_size
 
-DATASET = 'SVHN'
-models = ['smallCNN','largeCNN']
-lr = ['0.0001','0.0005','0.001']
-C= linspace(0,2,5)
+DATASET = 'CIFAR100'
+models = ['resnetLarge']
+lr = ['0.01']
+C= linspace(0,1,5)
 C=(C*100).astype('int32').astype('float32')/100.0
 print C
 for m in models:

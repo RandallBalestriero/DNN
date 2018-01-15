@@ -8,23 +8,19 @@ execfile('utils.py')
 execfile('models.py')
 execfile('lasagne_tf.py')
 
-DATASET = sys.argv[-5]
-e       = int(sys.argv[-4])
+DATASET = sys.argv[-4]
 lr      = float(sys.argv[-3])
 
 if(int(sys.argv[-2])==0):
 	m = smallCNN
 	m_name = 'smallCNN'
-	n_epochs = 100
 elif(int(sys.argv[-2])==1):
 	m = largeCNN
 	m_name = 'largeCNN'
-	n_epochs = 500
 
 elif(int(sys.argv[-2])==2):
         m = resnet_large
         m_name = 'resnetLarge'
-        n_epochs = 500
 
 
 
@@ -52,7 +48,7 @@ elif(DATASET == 'CIFAR'):
         n_epochs = 150
 
 elif(DATASET == 'CIFAR100'):
-	batch_size = 200
+	batch_size = 100
         TRAIN,TEST = load_cifar100(3)
         x_train,y_train = TRAIN
         x_test,y_test     = TEST
@@ -60,7 +56,7 @@ elif(DATASET == 'CIFAR100'):
         x_train = transpose(x_train,[0,2,3,1])
         x_test  = transpose(x_test,[0,2,3,1])
         c=100
-        n_epochs = 300
+        n_epochs = 150
 
 elif(DATASET=='IMAGE'):
 	batch_size=200
@@ -70,7 +66,7 @@ elif(DATASET=='IMAGE'):
         x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=20000,stratify=y)
         input_shape   = (batch_size,64,64,3)
 	c=200
-        n_epochs = 300
+        n_epochs = 150
 
 else:
         batch_size = 50
@@ -100,9 +96,9 @@ y_test            = array(y_test).astype('int32')
 for kk in xrange(15):
 	all_train = []
 	all_test  = []
-	for coeff in linspace(0,2,5):
-        	name = DATASET+'_e'+str(e)+'_'+m_name+'_lr'+str(lr)+'_run'+str(kk)+'_c'+str(coeff)
-		model1  = DNNClassifier(input_shape,m(1,c,g=1,p=2),lr=lr,n=int(sys.argv[-1]),Q=coeff,extra=e)
+	for coeff in linspace(0,2,15):
+        	name = DATASET+'_'+m_name+'_lr'+str(lr)+'_run'+str(kk)+'_c'+str(coeff)
+		model1  = DNNClassifier(input_shape,m(1,c,g=0,p=2),lr=lr,n=int(sys.argv[-1]),Q=coeff)
 		train_loss,test_loss = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
 		all_train.append(train_loss)
 		all_test.append(test_loss)

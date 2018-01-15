@@ -55,6 +55,27 @@ class adam:
 		return tf.group(*final)
 
 
+class Momentum:
+        def __init__(self,alpha=0.001,nu=0.9):
+                self.alpha = alpha
+		self.nu    = nu
+        def apply(self,loss_or_grads,variables):
+                self.v  = dict()
+                updates = dict()
+                # If loss generate the gradients else setup the gradients
+                if(isinstance(loss_or_grads,list)):
+                        gradients = loss_or_grads
+                else:   
+                        gradients = tf.gradients(loss_or_grads,variables)
+                # INIT THE Variables and Update Rules
+                for g,v in zip(gradients,variables):
+                        self.v[v] = tf.Variable(tf.zeros(tf.shape(v.initial_value)), 'm')
+                        updates[self.v[v]] = self.v[v].assign(self.v[v]*self.nu -self.alpha*g)
+                        updates[v]         = v.assign_add(updates[self.v[v]])
+                print tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                final = tf.get_collection(tf.GraphKeys.UPDATE_OPS)+updates.values()
+                return tf.group(*final)
+
 ###########################################################################################
 #
 #
@@ -234,8 +255,6 @@ class Block:
 		input2 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input1,training=test,fused=True)),self.W2,strides=[1,1,1,1],padding='VALID')
                 input3 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input2,training=test,fused=True)),self.W3,strides=[1,1,1,1],padding='VALID')
 		self.output = input3+input_output
-                tf.add_to_collection('resnet_extra',self.W11)
-                tf.add_to_collection('resnet_extra',self.W3)
                 if(stride==2):
                     self.output = tf.nn.avg_pool(self.output,[1,2,2,1],[1,2,2,1],'VALID')
 		print self.output_shape,self.output.get_shape()

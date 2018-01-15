@@ -8,7 +8,7 @@ def onehot(n,k):
         return z
 
 class DNNClassifier(object):
-	def __init__(self,input_shape,model_class,lr=0.0001,optimizer = adam,n=3,Q=0,extra=0):
+	def __init__(self,input_shape,model_class,lr=0.0001,optimizer = Momentum,n=3,Q=0):
 		tf.reset_default_graph()
 		config = tf.ConfigProto()
 		config.gpu_options.allow_growth = True
@@ -32,19 +32,15 @@ class DNNClassifier(object):
                         else: self.templates     = tf.gradients(self.prediction[self.template_i,self.template_j],self.layers[1].output)[0][self.template_i]
                         self.loss          = tf.reduce_mean(categorical_crossentropy(self.prediction,self.y_))# + 0.00001*l1_penaly()
         	        self.variables     = tf.trainable_variables()
-        	        print "VARIABLES",self.variables
+        	        print "VARIABLES",self.variables[-1]
 			if(Q>0):
-                                if(extra):
-                                    print  tf.get_collection('resnet_extra')
-                                    extra_loss = tf.add_n([ortho_loss4(w) for w in tf.get_collection('resnet_extra')])+ortho_loss2(self.variables[-1])
-                                else:
-                                    extra_loss = ortho_loss2(self.variables[-1])
+                                extra_loss = ortho_loss2(self.variables[-1])
         	        	self.apply_updates = optimizer.apply(self.loss+Q*extra_loss,self.variables)
 			else:
                                 self.apply_updates = optimizer.apply(self.loss,self.variables)
         	        self.accuracy      = tf.reduce_mean(tf.cast(tf.equal(tf.cast(tf.argmax(self.prediction,1),tf.int32), self.y_),tf.float32))
 		self.session.run(tf.global_variables_initializer())
-	def _fit(self,X,y,update_time=10):
+	def _fit(self,X,y,indices,update_time=10):
 		self.e+=1
 		indices = [find(y==k) for k in xrange(self.c)]
         	n_train    = X.shape[0]/self.batch_size
@@ -57,7 +53,8 @@ class DNNClassifier(object):
 				here = [random.sample(k,self.batch_size/self.c) for k in indices]
 			here = concatenate(here)
                         self.session.run(self.apply_updates,feed_dict={self.x:X[here],self.y_:y[here],self.test_phase:True,self.learning_rate:float32(self.lr/sqrt(self.e))})
-			print i,n_train
+		        if(i%100 ==0):
+                            print i,n_train
 			if(i%update_time==0):
                                 train_loss.append(self.session.run(self.loss,feed_dict={self.x:X[here],self.y_:y[here],self.test_phase:True}))
         	return train_loss
@@ -66,10 +63,10 @@ class DNNClassifier(object):
 		test_loss  = []
 		self.e = 0
                 n_test  = X_test.shape[0]/self.batch_size
+                indices = [find(y==k) for k in xrange(self.c)]
 		for i in xrange(n_epochs):
 			print "epoch",i
-#			p = permutation(X.shape[0])
-			train_loss.append(self._fit(X,y))
+			train_loss.append(self._fit(X,y,indices))
                 	acc1 = 0.0
                 	for j in xrange(n_test):
                 	        acc1+=self.session.run(self.accuracy,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],
@@ -77,11 +74,11 @@ class DNNClassifier(object):
                 	test_loss.append(acc1/n_test)
                 	print test_loss[-1]
         	return concatenate(train_loss),test_loss
-	def predict(self,X,i,j):
+	def predict(self,X):
 		n = X.shape[0]/self.batch_size
 		preds = []
 		for j in xrange(n):
-                    preds.append(session.run(tf.nn.softmax(self.prediction),feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False}))
+                    preds.append(session.run(self.prediction,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False}))
                 return concatenate(preds)
 	def get_templates(self,X):
             templates = []
@@ -119,20 +116,21 @@ class resnet_large:
                 self.g = g
                 self.p = p
                 self.c = c
-                tf.get_collection('resnet_extra')
         def get_layers(self,input_variable,input_shape,test):
+                depth = 6
+                k = 6
                 layers = [InputLayer(input_shape,input_variable)]
                 if(self.g):
                     layers.append(Generator(layers[-1],test=test,p=self.p))
-                layers.append(Conv2DLayer(layers[-1],32,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
-                layers.append(Block(layers[-1],64,128,1,test=test))
-                layers.append(Block(layers[-1],64,128,1,test=test))
-                layers.append(Block(layers[-1],64,256,2,test=test))
-                layers.append(Block(layers[-1],64,256,1,test=test))
-                layers.append(Block(layers[-1],128,512,2,test=test))
-                layers.append(Block(layers[-1],128,512,1,test=test))
-                layers.append(Block(layers[-1],256,1024,2,test=test))
-                layers.append(Block(layers[-1],256,1024,1,test=test))
+                layers.append(Conv2DLayer(layers[-1],16,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
+                for i in xrange(depth):
+                    layers.append(Block(layers[-1],16*k,16*k,1,test=test))# Resnet 4-4 straightened bottleneck
+                layers.append(Block(layers[-1],16*k*2,16*k*2,2,test=test))
+                for i in xrange(depth-1):
+                    layers.append(Block(layers[-1],16*k*2,16*k*2,1,test=test))
+                layers.append(Block(layers[-1],16*k*4,16*k*4,2,test=test))
+                for i in xrange(depth-1):
+                    layers.append(Block(layers[-1],16*k*4,16*k*4,1,test=test))
                 layers.append(GlobalPoolLayer(layers[-1]))
                 layers.append(DenseLayer(layers[-1],self.c,nonlinearity=lambda x:x))
                 return layers
