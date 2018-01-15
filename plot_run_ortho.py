@@ -6,76 +6,91 @@ label_size = 16
 mpl.rcParams['xtick.labelsize'] = label_size 
 mpl.rcParams['ytick.labelsize'] = label_size
 
-DATASET = 'CIFAR100'
-models = ['resnetLarge']
-lr = ['0.01']
-C= linspace(0,1,5)
+DATASET = 'CIFAR'
+models = ['smallCNN','largeCNN']
+lrs = ['0.0001','0.0005','0.001']
+C= linspace(0,2,15)
 C=(C*100).astype('int32').astype('float32')/100.0
 print C
-for m in models:
-	cpt = 1
-	for l in lr:
+
+def load_files(DATASET,model,lr):
+	"""Returns [array of shape (C,RUNS,BATCHES),(C,RUNS,EPOCHS)]"""
+	all_train = []
+        all_test  = []
+	Cs        = []
+	files     = sort(glob.glob('../../SAVE/QUADRATIC/'+DATASET+'*'+model+'_lr'+lr+'_run0_c*'))
+	for f,cc in zip(files,xrange(len(files))):
+		trainc = []
+		testc  = []
+                Cs.append(float(f.split('c')[-1][:4]))
+		subfiles = glob.glob(f.replace('run0','run*'))
+                for ff in subfiles:
+			print ff
+			fff = open(ff,'rb')
+                        train,test = cPickle.load(fff)
+                        fff.close()
+			print shape(train),shape(test)
+                        trainc.append(train[cc])#find(Cs[-1]==C)[0]])
+                        testc.append(test[cc])#find(Cs[-1]==C)[0]])
+		all_train.append(asarray(trainc))
+                all_test.append(asarray(testc))
+		print shape(all_train[-1])
+	return all_train,all_test,Cs
+
+
+def compute_mean_std_max(data):
+	return asarray([d[:,-3:].mean() for d in data]),asarray([d[:,-3:].mean(1).std() for d in data]),asarray([d.max() for d in data])
+
+
+
+for model in models:
+	if(len(lrs)>1):
 		all_train = []
-        	all_test  = []
-                all_test2 = []
-		all_train_std = []
-		all_test_std= []
-		all_c     = []
-		files     = glob.glob('../../SAVE/QUADRATIC/'+DATASET+'_'+m+'_lr'+l+'_run0_c*')
-		for f in files:
-                        c  = float(f.split('c')[-1][:4])
-			current_train = []
-			current_test  = []
-			subfiles = glob.glob(f.replace('run0','run*'))
-			for ff in subfiles:
-				print ff,c
-				fff = open(ff,'rb')
-				train,test = cPickle.load(fff)
-				fff.close()
-				print find(c==C)
-				current_train.append(train[find(c==C)[0]])
-				current_test.append(test[find(c==C)[0]])
-			train = asarray(current_train)#[:,0,:]
-			test  = asarray(current_test)#[:,0,:]
-			print train.shape,test.shape
-			all_c.append(c)
-			all_train.append(mean(train[:,-100:].mean(1)))
-			all_train_std.append(std(train[:,-100:].mean(1)))
-        	        all_test.append(mean(test[:,-5:].mean(1)))
-                        all_test2.append(mean(test.max(1)))
-                        all_test_std.append(std(test[:,-5:].mean(1)))
-		all_train = asarray(all_train)
-		all_test  = asarray(all_test)
-                all_test2 = asarray(all_test2)
-                all_train_std = asarray(all_train_std)
-                all_test_std  = asarray(all_test_std)
-		all_c = asarray(all_c)
-		print all_test.shape
-		print all_c
-		ii = argsort(all_c)
-		all_c = all_c[ii]
-		all_train = all_train[ii]
-		all_test = all_test[ii]
-		all_test2 = all_test2[ii]
-		subplot(2,len(lr),cpt)
-		plot(all_c,all_train,'ko')
-                fill_between(all_c,all_train_std+all_train,all_train-all_train_std,alpha=0.5,facecolor='gray')
-		xticks([])
-                if(l==lr[0]):
-			ylabel(r'$\mathcal{L}_{CE}$',fontsize=23)
-#		boxplot(all_train.T)
-		title('Learning Rate:'+l,fontsize=20)
-		subplot(2,len(lr),cpt+len(lr))
-#		boxplot(all_test.T)
-                plot(all_c,100*all_test2,'bo')
-		plot(all_c,100*all_test,'ko')
-                fill_between(all_c,100*all_test_std+100*all_test,100*all_test-100*all_test_std,alpha=0.5,facecolor='gray')
-                xlabel(r'$\gamma$',fontsize=19)
-		if(l==lr[0]):
-                	ylabel('Test Accuracy',fontsize=21)
-		cpt+=1
-	suptitle(DATASET+' '+m,fontsize=18)
-	show()	
+		all_test  = []
+		figure(figsize=(18,8))
+		cpt=1
+		for lr in lrs:
+			train,test,Cs = load_files(DATASET,model,lr)
+			all_train.append([d.mean(0) for d in train])
+			all_test.append([d.mean(0) for d in test])
+			#
+			dmean,dstd,dmax = compute_mean_std_max(test)
+			print dmean
+                	subplot(1,len(lrs),cpt)
+                	plot(Cs,100*dmax,'bo')
+                	plot(Cs,100*dmean,'ko')
+                	fill_between(Cs,100*dmean+100*dstd,100*dmean-100*dstd,alpha=0.5,facecolor='gray')
+                        title('Learning Rate:'+lr,fontsize=20)
+                	xlabel(r'$\gamma$',fontsize=19)
+                	if(lr==lrs[0]):
+                	        ylabel('Test Accuracy',fontsize=21)
+                	cpt+=1
+        	suptitle(DATASET+' '+model,fontsize=18)
+		savefig(DATASET+'_'+model+'_histo.png')
+		close()
+#		tight_layout()
+		figure(figsize=(18,8))
+		cpt=1
+                for lr,i in zip(lrs,xrange(len(lrs))):
+			subplot(2,len(lrs),cpt)
+			semilogy(all_train[i][0],'b',alpha=0.5)
+                        semilogy(all_train[i][-1],'k',alpha=0.5)
+			xlabel('Batch',fontsize=19)
+                        if(lr==lrs[0]):
+                                ylabel(r'$\log (\mathcal{L}_{CE})$',fontsize=21)
+			title('Learning Rate:'+lr,fontsize=20)
+                        subplot(2,len(lrs),len(lrs)+cpt)
+                        plot(all_test[i][0],color='b',alpha=0.5)
+                        plot(all_test[i][-1],color='k',alpha=0.5)
+			if(lr==lrs[0]):
+                                ylabel('Test Accuracy',fontsize=21)
+                        xlabel('Epoch',fontsize=19)
+			cpt+=1
+                suptitle(DATASET+' '+model,fontsize=18)
+                savefig(DATASET+'_'+model+'_loss.png')
+		close()
+#		tight_layout()
+#	show()	
 
 
 
