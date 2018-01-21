@@ -7,8 +7,10 @@ mpl.rcParams['xtick.labelsize'] = label_size
 mpl.rcParams['ytick.labelsize'] = label_size
 
 DATASET = 'CIFAR'
-models = ['smallCNN','largeCNN']
-lrs = ['0.0001','0.0005','0.001']
+#models = ['smallCNN']
+#lrs = ['0.0001','0.0005','0.001']
+models = ['largeCNN']
+lrs = ['0.0005']
 C= linspace(0,2,15)
 C=(C*100).astype('int32').astype('float32')/100.0
 print C
@@ -24,7 +26,9 @@ def load_files(DATASET,model,lr):
 		testc  = []
                 Cs.append(float(f.split('c')[-1][:4]))
 		subfiles = glob.glob(f.replace('run0','run*'))
-                for ff in subfiles:
+		print subfiles
+		print int(subfiles[0].split('run')[1].split('_')[0])
+                for ff in [fff for fff in subfiles if(int(fff.split('run')[1].split('_')[0])>9)]:
 			print ff
 			fff = open(ff,'rb')
                         train,test = cPickle.load(fff)
@@ -44,7 +48,7 @@ def compute_mean_std_max(data):
 
 
 for model in models:
-	if(len(lrs)>1):
+	if(1):#len(lrs)>1):
 		all_train = []
 		all_test  = []
 		figure(figsize=(18,8))
@@ -68,20 +72,19 @@ for model in models:
         	suptitle(DATASET+' '+model,fontsize=18)
 		savefig(DATASET+'_'+model+'_histo.png')
 		close()
-#		tight_layout()
 		figure(figsize=(18,8))
 		cpt=1
                 for lr,i in zip(lrs,xrange(len(lrs))):
 			subplot(2,len(lrs),cpt)
 			semilogy(all_train[i][0],'b',alpha=0.5)
-                        semilogy(all_train[i][-1],'k',alpha=0.5)
+                        semilogy(all_train[i][7],'k',alpha=0.5)
 			xlabel('Batch',fontsize=19)
                         if(lr==lrs[0]):
                                 ylabel(r'$\log (\mathcal{L}_{CE})$',fontsize=21)
 			title('Learning Rate:'+lr,fontsize=20)
                         subplot(2,len(lrs),len(lrs)+cpt)
                         plot(all_test[i][0],color='b',alpha=0.5)
-                        plot(all_test[i][-1],color='k',alpha=0.5)
+                        plot(all_test[i][7],color='k',alpha=0.5)
 			if(lr==lrs[0]):
                                 ylabel('Test Accuracy',fontsize=21)
                         xlabel('Epoch',fontsize=19)
@@ -89,7 +92,6 @@ for model in models:
                 suptitle(DATASET+' '+model,fontsize=18)
                 savefig(DATASET+'_'+model+'_loss.png')
 		close()
-#		tight_layout()
 #	show()	
 
 
