@@ -56,7 +56,7 @@ elif(DATASET == 'CIFAR100'):
         x_train = transpose(x_train,[0,2,3,1])
         x_test  = transpose(x_test,[0,2,3,1])
         c=100
-        n_epochs = 150
+        n_epochs = 200
 
 elif(DATASET=='IMAGE'):
 	batch_size=200
@@ -66,7 +66,7 @@ elif(DATASET=='IMAGE'):
         x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=20000,stratify=y)
         input_shape   = (batch_size,64,64,3)
 	c=200
-        n_epochs = 150
+        n_epochs = 200
 
 else:
         batch_size = 50
@@ -96,7 +96,7 @@ y_test            = array(y_test).astype('int32')
 for kk in xrange(15):
 	all_train = []
 	all_test  = []
-	for coeff in linspace(0,2,15):
+	for coeff in linspace(0,2,10):
         	name = DATASET+'_'+m_name+'_lr'+str(lr)+'_run'+str(kk)+'_c'+str(coeff)
 		model1  = DNNClassifier(input_shape,m(1,c,g=0,p=2),lr=lr,n=int(sys.argv[-1]),Q=coeff)
 		train_loss,test_loss = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
