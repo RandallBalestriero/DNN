@@ -31,7 +31,9 @@ def load_files(DATASET,model,lr):
                 for ff in [fff for fff in subfiles if(int(fff.split('run')[1].split('_')[0])>9)]:
 			print ff
 			fff = open(ff,'rb')
-                        train,test = cPickle.load(fff)
+                        content = cPickle.load(fff)
+			train = content[0]
+			test  = content[1]
                         fff.close()
 			print shape(train),shape(test)
                         trainc.append(train[cc])#find(Cs[-1]==C)[0]])

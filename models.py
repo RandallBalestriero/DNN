@@ -34,7 +34,7 @@ class DNNClassifier(object):
         	        self.variables     = tf.trainable_variables()
         	        print "VARIABLES",self.variables[-1]
 			if(Q>0):
-                                extra_loss = ortho_loss2(self.variables[-1])
+                                extra_loss = ortho_loss2(self.layers[-1].W)
         	        	self.apply_updates = optimizer.apply(self.loss+Q*extra_loss,self.variables)
 			else:
                                 self.apply_updates = optimizer.apply(self.loss,self.variables)
@@ -61,19 +61,23 @@ class DNNClassifier(object):
         def fit(self,X,y,X_test,y_test,n_epochs=5):
 		train_loss = []
 		test_loss  = []
-		self.e = 0
-                n_test  = X_test.shape[0]/self.batch_size
-                indices = [find(y==k) for k in xrange(self.c)]
+		self.e     = 0
+		W          = []
+                n_test     = X_test.shape[0]/self.batch_size
+                indices    = [find(y==k) for k in xrange(self.c)]
 		for i in xrange(n_epochs):
 			print "epoch",i
 			train_loss.append(self._fit(X,y,indices))
+			# NOW COMPUTE TEST SET ACCURACY
                 	acc1 = 0.0
                 	for j in xrange(n_test):
                 	        acc1+=self.session.run(self.accuracy,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],
 						self.y_:y_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False})
                 	test_loss.append(acc1/n_test)
+			# SAVE LAST W FOR STATISTIC COMPUTATION
+			W.append(self.session.run(self.layers[-1].W))
                 	print test_loss[-1]
-        	return concatenate(train_loss),test_loss
+        	return concatenate(train_loss),test_loss,W
 	def predict(self,X):
 		n = X.shape[0]/self.batch_size
 		preds = []

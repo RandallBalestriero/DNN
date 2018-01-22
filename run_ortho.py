@@ -96,14 +96,16 @@ y_test            = array(y_test).astype('int32')
 for kk in xrange(15):
 	all_train = []
 	all_test  = []
+	all_W     = []
 	for coeff in linspace(0,2,10):
         	name = DATASET+'_'+m_name+'_lr'+str(lr)+'_run'+str(kk)+'_c'+str(coeff)
 		model1  = DNNClassifier(input_shape,m(1,c,g=0,p=2),lr=lr,n=int(sys.argv[-1]),Q=coeff)
-		train_loss,test_loss = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
+		train_loss,test_loss,W = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
 		all_train.append(train_loss)
 		all_test.append(test_loss)
+		all_W.append(W)
 		f = open('../../SAVE/QUADRATIC/'+name,'wb')
-		cPickle.dump([all_train,all_test],f)
+		cPickle.dump([all_train,all_test,all_W],f)
 		f.close()
 
 
