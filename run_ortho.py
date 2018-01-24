@@ -93,7 +93,7 @@ y_test            = array(y_test).astype('int32')
  
 
 
-for kk in xrange(15):
+for kk in xrange(10,20):
 	all_train = []
 	all_test  = []
 	all_W     = []

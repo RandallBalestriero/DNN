@@ -8,7 +8,7 @@ def onehot(n,k):
         return z
 
 class DNNClassifier(object):
-	def __init__(self,input_shape,model_class,lr=0.0001,optimizer = Momentum,n=3,Q=0):
+	def __init__(self,input_shape,model_class,lr=0.0001,optimizer = adam,n=3,Q=0):
 		tf.reset_default_graph()
 		config = tf.ConfigProto()
 		config.gpu_options.allow_growth = True
@@ -42,6 +42,8 @@ class DNNClassifier(object):
 		self.session.run(tf.global_variables_initializer())
 	def _fit(self,X,y,indices,update_time=10):
 		self.e+=1
+                if(self.e==60 or self.e==120 or self.e==160):
+                    self.lr/=5
 		indices = [find(y==k) for k in xrange(self.c)]
         	n_train    = X.shape[0]/self.batch_size
         	train_loss = []
@@ -52,7 +54,7 @@ class DNNClassifier(object):
 			else:
 				here = [random.sample(k,self.batch_size/self.c) for k in indices]
 			here = concatenate(here)
-                        self.session.run(self.apply_updates,feed_dict={self.x:X[here],self.y_:y[here],self.test_phase:True,self.learning_rate:float32(self.lr/sqrt(self.e))})
+                        self.session.run(self.apply_updates,feed_dict={self.x:X[here],self.y_:y[here],self.test_phase:True,self.learning_rate:float32(self.lr)})#float32(self.lr/sqrt(self.e))})
 		        if(i%100 ==0):
                             print i,n_train
 			if(i%update_time==0):
@@ -121,20 +123,20 @@ class resnet_large:
                 self.p = p
                 self.c = c
         def get_layers(self,input_variable,input_shape,test):
-                depth = 6
-                k = 6
+                depth = 12
+                k = 2
                 layers = [InputLayer(input_shape,input_variable)]
                 if(self.g):
                     layers.append(Generator(layers[-1],test=test,p=self.p))
-                layers.append(Conv2DLayer(layers[-1],16,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
+                layers.append(Conv2DLayer(layers[-1],16*k,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
                 for i in xrange(depth):
-                    layers.append(Block(layers[-1],16*k,16*k,1,test=test))# Resnet 4-4 straightened bottleneck
-                layers.append(Block(layers[-1],16*k*2,16*k*2,2,test=test))
+                    layers.append(Block(layers[-1],16*k,1,test=test))# Resnet 4-4 straightened bottleneck
+                layers.append(Block(layers[-1],16*k*2,2,test=test))
                 for i in xrange(depth-1):
-                    layers.append(Block(layers[-1],16*k*2,16*k*2,1,test=test))
-                layers.append(Block(layers[-1],16*k*4,16*k*4,2,test=test))
+                    layers.append(Block(layers[-1],16*k*2,1,test=test))
+                layers.append(Block(layers[-1],16*k*4,2,test=test))
                 for i in xrange(depth-1):
-                    layers.append(Block(layers[-1],16*k*4,16*k*4,1,test=test))
+                    layers.append(Block(layers[-1],16*k*4,1,test=test))
                 layers.append(GlobalPoolLayer(layers[-1]))
                 layers.append(DenseLayer(layers[-1],self.c,nonlinearity=lambda x:x))
                 return layers

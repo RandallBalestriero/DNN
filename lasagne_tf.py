@@ -239,24 +239,22 @@ class Conv2DLayer:
 
 
 class Block:
-	def __init__(self,incoming,n_filters1,n_filters2,stride,test):
+	def __init__(self,incoming,n_filters1,stride,test):
 		input_shape = incoming.output_shape
 		input= incoming.output
-		filter_shape=3
-		padded_input = tf.pad(incoming.output,[[0,0],[1,1],[1,1],[0,0]],mode='CONSTANT')
-                self.output_shape = (incoming.output_shape[0],incoming.output_shape[1]/stride,incoming.output_shape[2]/stride,n_filters2)
-                init       = tf.contrib.layers.xavier_initializer(uniform=True)
-                self.W1     = tf.Variable(init((1,1,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)
-                self.W11    = tf.Variable(init((1,1,incoming.output_shape[3],n_filters2)),name='W11_',trainable=True)
-                self.W2     = tf.Variable(init((3,3,n_filters1,n_filters1)),name='W2_',trainable=True)
-                self.W3     = tf.Variable(init((1,1,n_filters1,n_filters2)),name='W3_',trainable=True)
-		input_output = tf.nn.conv2d(input,self.W11,strides=[1,1,1,1],padding='VALID')
-		input1 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(padded_input,training=test,fused=True)),self.W1,strides=[1,1,1,1],padding='VALID')
-		input2 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input1,training=test,fused=True)),self.W2,strides=[1,1,1,1],padding='VALID')
-                input3 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input2,training=test,fused=True)),self.W3,strides=[1,1,1,1],padding='VALID')
-		self.output = input3+input_output
+                self.output_shape = (incoming.output_shape[0],incoming.output_shape[1]/stride,incoming.output_shape[2]/stride,n_filters1)
+                init        = tf.contrib.layers.xavier_initializer(uniform=True)
+                self.W1     = tf.Variable(init((3,3,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)
+                self.W11    = tf.Variable(init((3,3,n_filters1,n_filters1)),name='W11_',trainable=True)
+		input1 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input,training=test,fused=True)),self.W1,strides=[1,1,1,1],padding='SAME')
+		input2 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input1,training=test,fused=True)),self.W11,strides=[1,1,1,1],padding='SAME')
                 if(stride==2):
+                    self.W0     = tf.Variable(init((1,1,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)
+                    input_output = tf.nn.conv2d(input,self.W0,strides=[1,1,1,1],padding='VALID')
+                    self.output = input2+input_output
                     self.output = tf.nn.avg_pool(self.output,[1,2,2,1],[1,2,2,1],'VALID')
+                else:
+                    self.output = input2+input
 		print self.output_shape,self.output.get_shape()
 
 
