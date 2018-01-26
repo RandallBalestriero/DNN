@@ -28,7 +28,11 @@ def load_files(DATASET,model,lr):
 		subfiles = glob.glob(f.replace('run0','run*'))
 		print subfiles
 		print int(subfiles[0].split('run')[1].split('_')[0])
-                for ff in [fff for fff in subfiles if(int(fff.split('run')[1].split('_')[0])>9)]:
+		if(not DATASET=='CIFAR100'):
+			lists = [fff for fff in subfiles if(int(fff.split('run')[1].split('_')[0])>9)]
+		else:
+                        lists = subfiles
+                for ff in lists:
 			print ff
 			fff = open(ff,'rb')
                         content = cPickle.load(fff)
