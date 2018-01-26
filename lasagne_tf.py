@@ -55,6 +55,41 @@ class adam:
 		return tf.group(*final)
 
 
+class meta_sgd:
+        def __init__(self,alpha,beta,gamma):
+                self.gamma   = gamma
+		self.alpha   = alpha
+		self.beta    = beta
+        def apply(self,loss_or_grads,variables):
+                self.gradl   = dict()
+                self.gradll  = dict()
+		self.alphas  = dict()
+		self.betas   = dict()
+                updates      = dict()
+                # If loss generate the gradients else setup the gradients
+                if(isinstance(loss_or_grads,list)):
+                        gradients = loss_or_grads
+                else:
+                        gradients = tf.gradients(loss_or_grads,variables)
+                for g,v in zip(gradients,variables):
+			self.alphas[v] = tf.Variable(self.alpha*tf.ones(tf.shape(v.initial_value)), 'alphas')
+                        self.betas[v]  = tf.Variable(self.beta*tf.ones(tf.shape(v.initial_value)), 'betas')
+                        self.gradl[v]  = tf.Variable(tf.zeros(tf.shape(v.initial_value)), 'm')
+                        self.gradll[v] = tf.Variable(tf.zeros(tf.shape(v.initial_value)), 'u')
+			updates[self.betas[v]]  = self.betas[v].assign_sub(self.gamma*g*self.gradl[v]**2*self.gradll[v])
+                        updates[self.alphas[v]] = self.alphas[v].assign_add(updates[self.betas[v]]*g*self.gradl[v])
+                        updates[v]              = v.assign_sub(updates[self.alphas[v]]*g)
+                        updates[self.gradll[v]] = self.gradll[v].assign(self.gradl[v])
+			with tf.control_dependencies([updates[self.gradll[v]]]):
+                        	updates[self.gradl[v]] = self.gradl[v].assign(g)
+                print tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                final = tf.get_collection(tf.GraphKeys.UPDATE_OPS)+updates.values()
+                return tf.group(*final)
+
+
+
+
+
 class Momentum:
         def __init__(self,alpha=0.001,nu=0.9):
                 self.alpha = alpha
