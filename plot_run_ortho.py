@@ -2,18 +2,14 @@ import cPickle
 from pylab import *
 import glob
 import matplotlib as mpl
-label_size = 16
+label_size = 12
 mpl.rcParams['xtick.labelsize'] = label_size 
 mpl.rcParams['ytick.labelsize'] = label_size
 
-DATASET = 'CIFAR'
 #models = ['smallCNN']
 #lrs = ['0.0001','0.0005','0.001']
-models = ['largeCNN']
-lrs = ['0.0005']
-C= linspace(0,2,15)
-C=(C*100).astype('int32').astype('float32')/100.0
-print C
+#C= linspace(0,2,15)
+#C=(C*100).astype('int32').astype('float32')/100.0
 
 def load_files(DATASET,model,lr):
 	"""Returns [array of shape (C,RUNS,BATCHES),(C,RUNS,EPOCHS)]"""
@@ -48,13 +44,34 @@ def load_files(DATASET,model,lr):
 	return all_train,all_test,Cs
 
 
+
+def load_Ws(DATASET,model,lr):
+        """Returns [array of shape (C,RUNS,BATCHES),(C,RUNS,EPOCHS)]"""
+        Ws        = []
+        Cs = []
+        files     = sort(glob.glob('../../SAVE/QUADRATIC/'+DATASET+'*'+model+'_lr'+lr+'_run0_c2*'))
+        print files
+        for f,cc in zip(files,xrange(len(files))):
+                print f
+                trainc = []
+                testc  = []
+                Cs.append(float(f.split('c')[-1][:4]))
+                ff = open(f,'rb')
+                content = cPickle.load(ff)
+                Ws = content[2]#[cc]
+                print shape(Ws)
+                ff.close()
+#                Ws.append(W)
+        return asarray(Ws)[:,-1,:,:],(linspace(0,2,10)*100).astype('int32').astype('float32')/100.0
+
+
+
 def compute_mean_std_max(data):
 	return asarray([d[:,-3:].mean() for d in data]),asarray([d[:,-3:].mean(1).std() for d in data]),asarray([d.max() for d in data])
 
 
-
-for model in models:
-	if(1):#len(lrs)>1):
+def plot_files(models,lrs,DATASET):
+        for model in models:
 		all_train = []
 		all_test  = []
 		figure(figsize=(18,8))
@@ -100,6 +117,38 @@ for model in models:
 		close()
 #	show()	
 
+def normalize(x):
+    return (x-x.min())/(x.max()-x.min())
+
+def plot_Ws(models,lrs,DATASET):
+        for model in models:
+		all_train = []
+		all_test  = []
+		figure(figsize=(25,9))
+		cpt=1
+		for lr in lrs:
+			Ws,Cs = load_Ws(DATASET,model,lr)
+                        plot([])
+                        for W,i in zip(Ws,range(len(Ws))):
+                	    subplot(3,len(Ws),1+i)
+                            K=(dot(W.T,W)-diag((W**2).sum(0)))**2
+                	    imshow(normalize(K),interpolation='nearest',aspect='auto')
+                            xticks([])
+                            yticks([])
+                            subplot(3,len(Ws),1+i+len(Ws))
+                            hist(log(K[K.nonzero()]).flatten(),200)
+#                            xticks([])
+#                            yticks([])
+                        subplot(313)
+                        semilogy(Cs,[mean((dot(W.T,W)-diag((W**2).sum(0)))**2) for W in Ws])
+                        ylabel(r'$\log(\mathcal{L}_\gamma(W^{(L)})$',fontsize=18)
+                        xlabel(r'$\gamma$',fontsize=18)
+        	suptitle(DATASET+' '+model,fontsize=18)
+                savefig(DATASET+'_'+model+'_Ws.png')
+#show()
 
 
+
+plot_files(['resnetLarge'],lrs = ['0.0005'],DATASET='CIFAR100')
+#plot_Ws(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR100')
 

@@ -77,7 +77,8 @@ class DNNClassifier(object):
 						self.y_:y_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False})
                 	test_loss.append(acc1/n_test)
 			# SAVE LAST W FOR STATISTIC COMPUTATION
-			W.append(self.session.run(self.layers[-1].W))
+                        if(i==0 or i==(n_epochs-1)):
+                            W.append(self.session.run(self.layers[-1].W))
                 	print test_loss[-1]
         	return concatenate(train_loss),test_loss,W
 	def predict(self,X):
