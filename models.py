@@ -44,7 +44,6 @@ class DNNClassifier(object):
 		self.e+=1
                 if(self.e==60 or self.e==120 or self.e==160):
                     self.lr/=5
-		indices = [find(y==k) for k in xrange(self.c)]
         	n_train    = X.shape[0]/self.batch_size
         	train_loss = []
         	for i in xrange(n_train):

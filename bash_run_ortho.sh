@@ -26,8 +26,8 @@
 #export CUDA_VISIBLE_DEVICES=4;nohup bash -c "(python run_ortho.py IMAGE 0.001 1 0 > cifar_001_0_2.out) &> cpython_001_0_2.out" &
 
 
-export CUDA_VISIBLE_DEVICES=2;nohup bash -c "(python run_ortho.py CIFAR100 0.0005 2 0 > cifar100_0005_0_2.out) &> cpython100_0005_0_2.out" &
-sleep 10s
+export CUDA_VISIBLE_DEVICES=0;nohup bash -c "(python run_ortho.py CIFAR100 0.0005 2 0 > cifar100_0005_0_2.out) &> cpython100_0005_0_2.out" &
+#sleep 10s
 #export CUDA_VISIBLE_DEVICES=2;nohup bash -c "(python run_ortho.py CIFAR100 0.0005 2 0 > cifar100_0005_1_2.out) &> cpython100_0005_1_2.out" &
 #sleep 10s
 #export CUDA_VISIBLE_DEVICES=1;nohup bash -c "(python run_ortho.py CIFAR100 0 0.0005 1 0 > cifar100_0005_0_1.out) &> cpython100_0005_0_1.out" &
