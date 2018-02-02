@@ -88,9 +88,12 @@ class DNNClassifier(object):
                 return concatenate(preds)
 	def get_templates(self,X):
             templates = []
-            for i in xrange(self.batch_size):
-                for c in xrange(self.c):
-                    templates.append(self.session.run(self.templates,feed_dict={self.x:X.astype('float32'),self.test_phase:True,self.self.template_i:i,self.self.template_j:c}))
+	    n_batch = X.shape[0]/self.batch_size
+            for i in xrange(n_batch):
+		for j in xrange(self.batch_size):
+		    templates.append([])
+                    for c in xrange(self.c):
+                        templates[-1].append(self.session.run(self.templates,feed_dict={self.x:X[i*self.batch_size:(i+1)*self.batch_size].astype('float32'),self.test_phase:False,self.self.template_i:j,self.self.template_j:c}))
             return templates
 
 
