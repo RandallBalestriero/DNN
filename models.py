@@ -8,29 +8,29 @@ def onehot(n,k):
         return z
 
 class DNNClassifier(object):
-	def __init__(self,input_shape,model_class,lr=0.0001,optimizer = adam,n=3,Q=0):
+	def __init__(self,input_shape,model_class,lr=0.0001,optimizer = adam,gpu=3,Q=0,l1=0,l2=0):
 		tf.reset_default_graph()
 		config = tf.ConfigProto()
 		config.gpu_options.allow_growth = True
-		self.c = model_class.c
+		self.n_classes=  model_class.n_classes
 		config.log_device_placement=True
 		self.session = tf.Session(config=config)
 		self.batch_size = input_shape[0]
 		self.lr = lr
-		with tf.device('/device:GPU:'+str(n)):
+		with tf.device('/device:GPU:'+str(gpu)):
 			self.learning_rate = tf.placeholder(tf.float32,name='learning_rate')
 			optimizer = optimizer(self.learning_rate)
         		self.x             = tf.placeholder(tf.float32, shape=input_shape,name='x')
         	        self.y_            = tf.placeholder(tf.int32, shape=[batch_size],name='y')
-                        self.template_i    = tf.placeholder(tf.int32,name='teplatei')
-                        self.template_j    = tf.placeholder(tf.int32,name='teplatej')
         	        self.test_phase    = tf.placeholder(tf.bool,name='phase')
         	        self.layers        = model_class.get_layers(self.x,input_shape,test=self.test_phase)
         	        self.prediction    = self.layers[-1].output
-                        if(model_class.g==0):
-                            self.templates     = tf.gradients(self.prediction[self.template_i,self.template_j],self.x)[0][self.template_i]
-                        else: self.templates     = tf.gradients(self.prediction[self.template_i,self.template_j],self.layers[1].output)[0][self.template_i]
-                        self.loss          = tf.reduce_mean(categorical_crossentropy(self.prediction,self.y_))# + 0.00001*l1_penaly()
+                        if(model_class.augmentation==0):
+                            self.templates     = tf.stack([tf.gradients(self.prediction,self.x,tf.one_hot(tf.fill([input_shape[0]],c),self.n_classes))[0] for c in xrange(self.n_classes)])
+                        else:
+                            self.templates     = tf.stack([tf.gradients(self.prediction,self.layers[1].output,tf.one_hot(tf.fill([input_shape[0]],c),self.n_classes))[0] for c in xrange(self.n_classes)])
+                        self.crossentropy_loss = tf.reduce_mean(categorical_crossentropy(self.prediction,self.y_))
+			self.loss          = self.crossentropy_loss+ l1*l1_penaly() +l2*l2_penaly()
         	        self.variables     = tf.trainable_variables()
         	        print "VARIABLES",self.variables[-1]
 			if(Q>0):
@@ -47,11 +47,11 @@ class DNNClassifier(object):
         	n_train    = X.shape[0]/self.batch_size
         	train_loss = []
         	for i in xrange(n_train):
-			if(self.batch_size<self.c):
+			if(self.batch_size<self.n_classes):
 				here = [random.sample(k,1) for k in indices]
-				here = [here[i] for i in permutation(self.c)[:self.batch_size]]
+				here = [here[i] for i in permutation(self.n_classes)[:self.batch_size]]
 			else:
-				here = [random.sample(k,self.batch_size/self.c) for k in indices]
+				here = [random.sample(k,self.batch_size/self.n_classes) for k in indices]
 			here = concatenate(here)
                         self.session.run(self.apply_updates,feed_dict={self.x:X[here],self.y_:y[here],self.test_phase:True,self.learning_rate:float32(self.lr)})#float32(self.lr/sqrt(self.e))})
 		        if(i%100 ==0):
@@ -65,7 +65,7 @@ class DNNClassifier(object):
 		self.e     = 0
 		W          = []
                 n_test     = X_test.shape[0]/self.batch_size
-                indices    = [find(y==k) for k in xrange(self.c)]
+                indices    = [find(y==k) for k in xrange(self.n_classes)]
 		for i in xrange(n_epochs):
 			print "epoch",i
 			train_loss.append(self._fit(X,y,indices))
@@ -87,14 +87,14 @@ class DNNClassifier(object):
                     preds.append(session.run(self.prediction,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False}))
                 return concatenate(preds)
 	def get_templates(self,X):
-            templates = []
-	    n_batch = X.shape[0]/self.batch_size
-            for i in xrange(n_batch):
-		for j in xrange(self.batch_size):
-		    templates.append([])
-                    for c in xrange(self.c):
-                        templates[-1].append(self.session.run(self.templates,feed_dict={self.x:X[i*self.batch_size:(i+1)*self.batch_size].astype('float32'),self.test_phase:False,self.self.template_i:j,self.self.template_j:c}))
-            return templates
+        	templates = []
+		n_batch = X.shape[0]/self.batch_size
+        	for ii in xrange(15):
+			i = randint(n_batch)
+			t=self.session.run(self.templates,feed_dict={self.x:X[i*self.batch_size:(i+1)*self.batch_size].astype('float32'),self.test_phase:False})
+			t=transpose(t,[1,0,2,3,4])
+			templates.append(concatenate([X[i*self.batch_size:(i+1)*self.batch_size,newaxis,:,:,:],t],axis=1))
+		return concatenate(templates,axis=0)
 
 
 
@@ -102,34 +102,34 @@ class DNNClassifier(object):
 
 
 class smallCNN:
-	def __init__(self,bn=1,c=10,g=0,p=0):
+	def __init__(self,bn=1,n_classes=10,augmentation=0,p=0):
 		self.bn = bn
-                self.g = g
+                self.augmentation = augmentation
                 self.p = p
-		self.c = c
+		self.n_classes = n_classes
 	def get_layers(self,input_variable,input_shape,test):
 		layers = [InputLayer(input_shape,input_variable)]
-                if(self.g):
+                if(self.augmentation):
                     layers.append(Generator(layers[-1],test=test,p=self.p))
 		layers.append(Conv2DLayer(layers[-1],32,5,test=test,bn=self.bn))
                 layers.append(Pool2DLayer(layers[-1],2))
                 layers.append(Conv2DLayer(layers[-1],64,5,test=test,bn=self.bn))
                 layers.append(Pool2DLayer(layers[-1],2))
-                layers.append(DenseLayer(layers[-1],self.c,nonlinearity=lambda x:x))
+                layers.append(DenseLayer(layers[-1],self.n_classes,nonlinearity=lambda x:x))
 		return layers
 
 
 class resnet_large:
-        def __init__(self,bn=1,c=10,g=0,p=0):
+        def __init__(self,bn=1,n_classes=10,augmentation=0,p=0):
                 self.bn = bn
-                self.g = g
+                self.augmentation = augmentation
                 self.p = p
-                self.c = c
+                self.n_classes = n_classes
         def get_layers(self,input_variable,input_shape,test):
                 depth = 12
                 k = 2
                 layers = [InputLayer(input_shape,input_variable)]
-                if(self.g):
+                if(self.augmentation):
                     layers.append(Generator(layers[-1],test=test,p=self.p))
                 layers.append(Conv2DLayer(layers[-1],16*k,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
                 for i in xrange(depth):
@@ -141,21 +141,47 @@ class resnet_large:
                 for i in xrange(depth-1):
                     layers.append(Block(layers[-1],16*k*4,1,test=test))
                 layers.append(GlobalPoolLayer(layers[-1]))
-                layers.append(DenseLayer(layers[-1],self.c,nonlinearity=lambda x:x))
+                layers.append(DenseLayer(layers[-1],self.n_classes,nonlinearity=lambda x:x))
                 return layers
 
 
 
+class resnet_small:
+        def __init__(self,bn=1,n_classes=10,augmentation=0,p=0):
+                self.bn = bn
+                self.augmentation = augmentation
+                self.p = p
+                self.n_classes = n_classes
+        def get_layers(self,input_variable,input_shape,test):
+                depth = 0
+                k = 3
+                layers = [InputLayer(input_shape,input_variable)]
+                if(self.augmentation):
+                    layers.append(Generator(layers[-1],test=test,p=self.p))
+                layers.append(Conv2DLayer(layers[-1],16*k,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
+                for i in xrange(depth):
+                    layers.append(Block(layers[-1],16*k,1,test=test))# Resnet 4-4 straightened bottleneck
+                layers.append(Block(layers[-1],16*k*2,2,test=test))
+                for i in xrange(depth-1):
+                    layers.append(Block(layers[-1],16*k*2,1,test=test))
+                layers.append(Block(layers[-1],16*k*4,2,test=test))
+                for i in xrange(depth-1):
+                    layers.append(Block(layers[-1],16*k*4,1,test=test))
+                layers.append(GlobalPoolLayer(layers[-1]))
+                layers.append(DenseLayer(layers[-1],self.n_classes,nonlinearity=lambda x:x))
+                return layers
+
+
 
 class largeCNN:
-        def __init__(self,bn=1,c=10,g=0,p=0):
+        def __init__(self,bn=1,n_classes=10,augmentation=0,p=0):
                 self.bn = bn
                 self.p = p
-                self.g = g
-		self.c = c
+                self.augmentation = augmentation
+		self.n_classes = n_classes
         def get_layers(self,input_variable,input_shape,test):
                 layers = [InputLayer(input_shape,input_variable)]
-                if(self.g):
+                if(self.augmentation):
                     layers.append(Generator(layers[-1],test=test,p=self.p))
                 layers.append(Conv2DLayer(layers[-1],96,3,pad='same',test=test,bn=self.bn))
                 layers.append(Conv2DLayer(layers[-1],96,3,pad='full',test=test,bn=self.bn))
@@ -167,7 +193,8 @@ class largeCNN:
                 layers.append(Pool2DLayer(layers[-1],2))
                 layers.append(Conv2DLayer(layers[-1],192,3,test=test,bn=self.bn))
                 layers.append(Conv2DLayer(layers[-1],192,1,test=test))
-                layers.append(DenseLayer(layers[-1],self.c,nonlinearity=lambda x:x))
+                layers.append(GlobalPoolLayer(layers[-1]))
+                layers.append(DenseLayer(layers[-1],self.n_classes,nonlinearity=lambda x:x))
                 return layers
 
 

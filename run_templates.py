@@ -19,8 +19,8 @@ elif(int(sys.argv[-2])==1):
 	m_name = 'largeCNN'
 
 elif(int(sys.argv[-2])==2):
-        m = resnet_large
-        m_name = 'resnetLarge'
+        m = resnet_small
+        m_name = 'resnetSmall'
 
 
 
@@ -92,13 +92,10 @@ y_train           = array(y_train).astype('int32')
 y_test            = array(y_test).astype('int32')
  
 
-n_epochs=1
+n_epochs=3
 name = DATASET+'_'+m_name+'_templates.pkl'
-model1  = DNNClassifier(input_shape,m(1,c,g=1,p=2),lr=lr,n=int(sys.argv[-1]),Q=0)
+model1  = DNNClassifier(input_shape,m(bn=1,n_classes=c),lr=lr,gpu=int(sys.argv[-1]),Q=0)
 train_loss,test_loss,W = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
-all_train.append(train_loss)
-all_test.append(test_loss)
-all_W.append(W)
 templates = model1.get_templates(x_test)
 f = open('../../SAVE/QUADRATIC/'+name,'wb')
 cPickle.dump(templates,f)

@@ -20,8 +20,16 @@ def categorical_crossentropy(logits, labels):
 
 
 def l1_penaly():
-	cost = tf.add_n([tf.norm(v,ord=1) for v in get_variables(regularizable=1)])
+	Ws = tf.get_collection("regularizable")
+	cost = tf.add_n([tf.norm(v,ord=1) for v in Ws])/float32(len(Ws))
 	return cost
+
+
+def l2_penaly():
+        Ws = tf.get_collection("regularizable")
+        cost = tf.add_n([tf.norm(v,ord=2) for v in Ws])/float32(len(Ws))
+        return cost
+
 
 
 
