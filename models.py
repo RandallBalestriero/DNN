@@ -84,7 +84,7 @@ class DNNClassifier(object):
 		n = X.shape[0]/self.batch_size
 		preds = []
 		for j in xrange(n):
-                    preds.append(session.run(self.prediction,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False}))
+                    preds.append(session.run(self.prediction,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:True}))
                 return concatenate(preds)
 	def get_templates(self,X):
         	templates = []
@@ -95,6 +95,15 @@ class DNNClassifier(object):
 			t=transpose(t,[1,0,2,3,4])
 			templates.append(concatenate([X[i*self.batch_size:(i+1)*self.batch_size,newaxis,:,:,:],t],axis=1))
 		return concatenate(templates,axis=0)
+	def get_all_masks(self,X):
+                templates = [[] for i in xrange(len(self.layers)-1)]
+                n_batch   = X.shape[0]/self.batch_size
+                for i in xrange(n_batch):
+			for j in xrange(len(templates)):
+                        	templates[j].append((self.session.run(self.layers[j].output,feed_dict={self.x:X[i*self.batch_size:(i+1)*self.batch_size].astype('float32'),self.test_phase:False})>0).astype('bool'))
+		for j in xrange(len(templates)):
+			templates[j]=concatenate(templates[j],axis=0).astype('bool')
+                return templates
 
 
 

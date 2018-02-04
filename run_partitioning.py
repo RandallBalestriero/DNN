@@ -92,11 +92,12 @@ y_train           = array(y_train).astype('int32')
 y_test            = array(y_test).astype('int32')
  
 
-n_epochs=13
-name = DATASET+'_'+m_name+'_templates.pkl'
+n_epochs=3
+name = DATASET+'_'+m_name+'_partitions.pkl'
 model1  = DNNClassifier(input_shape,m(bn=0,n_classes=c),lr=lr,gpu=int(sys.argv[-1]),Q=0)
 train_loss,test_loss,W = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
-templates = model1.get_templates(x_test)
+templates = model1.get_all_masks(x_test)
+
 f = open('../../SAVE/QUADRATIC/'+name,'wb')
 cPickle.dump(templates,f)
 f.close()
