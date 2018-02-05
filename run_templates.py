@@ -92,14 +92,23 @@ y_train           = array(y_train).astype('int32')
 y_test            = array(y_test).astype('int32')
  
 
-n_epochs=13
-name = DATASET+'_'+m_name+'_templates.pkl'
-model1  = DNNClassifier(input_shape,m(bn=0,n_classes=c),lr=lr,gpu=int(sys.argv[-1]),Q=0)
-train_loss,test_loss,W = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
-templates = model1.get_templates(x_test)
-f = open('../../SAVE/QUADRATIC/'+name,'wb')
-cPickle.dump(templates,f)
-f.close()
+n_epochs=25
+p=permutation(len(x_train))
+def doit(DATASET,m_name,m,bn,bias):
+	name = DATASET+'_'+m_name+'bn'+str(bn)+'_b'+str(bias)+'_templates.pkl'
+	model1  = DNNClassifier(input_shape,m(bn=bn,n_classes=c,bias=bias),lr=lr,gpu=int(sys.argv[-1]),Q=0,l1=0.0)
+	train_loss,test_loss,W = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
+	templates   = model1.get_templates(x_train[p[:500]])
+	predictions,Ax,bx = model1.get_template_statistics(x_train)
+	f = open('../../SAVE/QUADRATIC/'+name,'wb')
+	cPickle.dump([[templates,x_train[p[:500]],test_loss],[y_train,predictions,Ax,bx]],f)
+	f.close()
+
+
+doit(DATASET,m_name,m,0,0)
+doit(DATASET,m_name,m,0,1)
+doit(DATASET,m_name,m,1,0)
+doit(DATASET,m_name,m,1,1)
 
 
 

@@ -168,7 +168,7 @@ class InputLayer:
 
 
 class DenseLayer:
-	def __init__(self,incoming,n_output,nonlinearity=tf.nn.relu):
+	def __init__(self,incoming,n_output,nonlinearity=tf.nn.relu,bias=1):
 		if(len(incoming.output_shape)>2):
 			inputf = tf.layers.flatten(incoming.output)
 			in_dim = prod(incoming.output_shape[1:])
@@ -176,11 +176,15 @@ class DenseLayer:
 			inputf = incoming.output
 			in_dim = incoming.output_shape[1]
                 init   = tf.contrib.layers.xavier_initializer(uniform=True)
-                self.b = tf.Variable(tf.zeros((1,n_output)),name='b_dense',trainable=True)
+		if(bias):
+                	self.b = tf.Variable(tf.zeros((1,n_output)),name='b_dense',trainable=True)
                 self.W = tf.Variable(init((in_dim,n_output)),name='W_dense',trainable=True)
                 tf.add_to_collection("regularizable",self.W)
 		self.output_shape = (incoming.output_shape[0],n_output)
-		self.output       = nonlinearity(tf.matmul(inputf,self.W)+self.b)
+		if(bias):
+			self.output       = nonlinearity(tf.matmul(inputf,self.W)+self.b)
+		else:
+                        self.output       = nonlinearity(tf.matmul(inputf,self.W))
 
 
 class QDenseLayer:
@@ -255,7 +259,7 @@ class QConv2DLayer:
 
 
 class Conv2DLayer:
-        def __init__(self,incoming,n_filters,filter_shape,test,stride=1,pad='valid',mode='CONSTANT',nonlinearity=tf.nn.relu,bn=0):
+        def __init__(self,incoming,n_filters,filter_shape,test,stride=1,pad='valid',mode='CONSTANT',nonlinearity=tf.nn.relu,bn=0,bias=1):
 		print incoming.output_shape
                 if(pad=='valid' or filter_shape==1):
                         padded_input = incoming.output
@@ -273,27 +277,33 @@ class Conv2DLayer:
                 self.W     = tf.Variable(init((filter_shape,filter_shape,incoming.output_shape[3],n_filters)),name='W_conv2d',trainable=True)
                 output1    = tf.nn.conv2d(padded_input,self.W,strides=[1,stride,stride,1],padding='VALID')
                 if(bn==0):
-                        self.b      = tf.Variable(tf.zeros((1,1,1,n_filters)),name='b_conv',trainable=True)
-                        self.output = nonlinearity(output1+self.b)
+			if(bias):
+                        	self.b      = tf.Variable(tf.zeros((1,1,1,n_filters)),name='b_conv',trainable=True)
+                        	self.output = nonlinearity(output1+self.b)
+			else:
+                                self.output = nonlinearity(output1)
                 else:
-                        self.output = nonlinearity(tf.layers.batch_normalization(output1,training=test,fused=True))
+                        self.output = nonlinearity(tf.layers.batch_normalization(output1,training=test,fused=True,center=bias))
+			if(bias==0):
+				A=tf.get_collection_ref(tf.GraphKeys.UPDATE_OPS)
+				A.pop(-2)
                 tf.add_to_collection("regularizable",self.W)
 		print self.output_shape
 
 
 class Block:
-	def __init__(self,incoming,n_filters1,stride,test):
+	def __init__(self,incoming,n_filters1,stride,test,bias):
 		input_shape = incoming.output_shape
 		input= incoming.output
                 self.output_shape = (incoming.output_shape[0],incoming.output_shape[1]/stride,incoming.output_shape[2]/stride,n_filters1)
                 init        = tf.contrib.layers.xavier_initializer(uniform=True)
                 self.W1     = tf.Variable(init((3,3,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)
                 self.W11    = tf.Variable(init((3,3,n_filters1,n_filters1)),name='W11_',trainable=True)
-		input1 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input,training=test,fused=True)),self.W1,strides=[1,1,1,1],padding='SAME')
-		input2 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input1,training=test,fused=True)),self.W11,strides=[1,1,1,1],padding='SAME')
+		input1 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input,training=test,fused=True)),self.W1,strides=[1,1,1,1],padding='SAME',bias=bias)
+		input2 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input1,training=test,fused=True)),self.W11,strides=[1,1,1,1],padding='SAME',bias=bias)
                 if(stride==2):
                     self.W0     = tf.Variable(init((1,1,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)
-                    input_output = tf.nn.conv2d(input,self.W0,strides=[1,1,1,1],padding='VALID')
+                    input_output = tf.nn.conv2d(input,self.W0,strides=[1,1,1,1],padding='VALID',bias=bias)
                     self.output = input2+input_output
                     self.output = tf.nn.avg_pool(self.output,[1,2,2,1],[1,2,2,1],'VALID')
                 else:

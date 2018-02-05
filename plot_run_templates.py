@@ -6,47 +6,67 @@ label_size = 12
 mpl.rcParams['xtick.labelsize'] = label_size 
 mpl.rcParams['ytick.labelsize'] = label_size
 
-#models = ['smallCNN']
-#lrs = ['0.0001','0.0005','0.001']
-#C= linspace(0,2,15)
-#C=(C*100).astype('int32').astype('float32')/100.0
+
+
+def loadfile(name):
+        f=open(name,'rb')
+        data=cPickle.load(f)
+        f.close()
+        templates = data[0][0]
+        x = data[0][1]
+        x-=x.min((1,2,3),keepdims=True)
+        x/=x.max((1,2,3),keepdims=True)
+        templates-=templates.min((2,3,4),keepdims=True)
+        templates/=templates.max((2,3,4),keepdims=True)
+	test = data[0][2]
+        predsy = data[1][0]
+        preds  = data[1][1]
+        Ax     = data[1][2]
+        bx     = data[1][3]
+	return x,templates,predsy,preds,Ax,bx,test
+
+
+def subplots(x,templates,predsy,preds,Ax,bx,test,offset):
+        subplot(4,13,1+offset)
+        if(x.shape[-1]==1):
+                imshow(x[0,:,:,0],cmap='gray',interpolation='nearest')
+                xticks([])
+                yticks([])
+                title(str(test[-1]))
+        for i in xrange(10):
+                subplot(4,13,2+i+offset)
+                if(x.shape[-1]==1):
+                        imshow(templates[0,i,:,:,0],cmap='gray',interpolation='nearest')
+                title(str((templates[0,i,:,:,0]*x[0,:,:,0]).sum()))
+                xticks([])
+                yticks([])
+        subplot(4,13,12+offset)
+        hist(concatenate([Ax[predsy==i,i] for i in xrange(10)]),100,alpha=0.5)
+        hist(concatenate([Ax[predsy!=i,i] for i in xrange(10)]),100,alpha=0.5)
+        subplot(4,13,13+offset)
+        hist(concatenate([bx[predsy==i,i] for i in xrange(10)]),100,alpha=0.5)
+        hist(concatenate([bx[predsy!=i,i] for i in xrange(10)]),100,alpha=0.5)
+
+
 
 def plot_files(DATASET):
-	files = glob.glob('../../SAVE/QUADRATIC/'+DATASET+'*templates*')
-	f=open(files[0],'rb')
-	templates=cPickle.load(f)
-	f.close()
-	rtemplates=asarray(templates)
-	rtemplates-=rtemplates.min((2,3,4),keepdims=True)
-        rtemplates/=rtemplates.max((2,3,4),keepdims=True)
-
-	for k in xrange(1):
-		for i in xrange(10):
-			figure(figsize=(18,1.7))
-                        subplot(1,11,1)
-                        if(rtemplates.shape[-1]==1):
-	                        imshow(rtemplates[i+5*k,0][:,:,0],aspect='auto',vmin=rtemplates[i+5*k,0].min(),vmax=rtemplates[i+5*k,0].max(),cmap='gray')
-				xticks([])
-				yticks([])
-			else:
-                                imshow(rtemplates[i+5*k,0],aspect='auto')
-                                xticks([])
-                                yticks([])
-			for j in xrange(1,11):
-				subplot(1,11,j+1)
-				if(rtemplates.shape[-1]==1):
-					imshow(rtemplates[i+5*k,j][:,:,0],aspect='auto',vmin=rtemplates[i+5*k,1:].min(),vmax=rtemplates[i+5*k,1:].max(),cmap='gray')
-	                                xticks([])
-	                                yticks([])
-				else:
-                                        imshow(rtemplates[i+5*k,j],aspect='auto')
-	                                xticks([])
-	                                yticks([])
-				title(str((templates[i+5*k][0]*templates[i+5*k][j]).mean()))
+	files = glob.glob('../../SAVE/QUADRATIC/'+DATASET+'bn0_b0*templates*')
+	x,templates,predsy,preds,Ax,bx,test=loadfile(files[0])
+	subplots(x,templates,predsy,preds,Ax,bx,test,0)
+        files = glob.glob('../../SAVE/QUADRATIC/'+DATASET+'bn0_b1*templates*')
+        x,templates,predsy,preds,Ax,bx,test=loadfile(files[0])
+        subplots(x,templates,predsy,preds,Ax,bx,test,13)
+        files = glob.glob('../../SAVE/QUADRATIC/'+DATASET+'bn1_b0*templates*')
+        x,templates,predsy,preds,Ax,bx,test=loadfile(files[0])
+        subplots(x,templates,predsy,preds,Ax,bx,test,26)
+        files = glob.glob('../../SAVE/QUADRATIC/'+DATASET+'bn1_b1*templates*')
+        x,templates,predsy,preds,Ax,bx,test=loadfile(files[0])
+        subplots(x,templates,predsy,preds,Ax,bx,test,39)
+	tight_layout()
 	show()
 
 
+#plot_files('MNIST*largeCNN')
+plot_files('MNIST*smallCNN')
 
-plot_files('MNIST*resnetSmall')
-#plot_Ws(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR100')
 
