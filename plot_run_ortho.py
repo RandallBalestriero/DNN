@@ -16,7 +16,7 @@ def load_files(DATASET,model,lr):
 	all_train = []
         all_test  = []
 	Cs        = []
-	files     = sort(glob.glob('../../SAVE/QUADRATIC/'+DATASET+'*'+model+'_lr'+lr+'_run0_c*'))
+	files     = sort(glob.glob('/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'*'+model+'_lr'+lr+'_run0_c*'))
 	for f,cc in zip(files,xrange(len(files))):
 		trainc = []
 		testc  = []
@@ -106,8 +106,8 @@ def plot_files(models,lrs,DATASET):
                                 ylabel(r'$\log (\mathcal{L}_{CE})$',fontsize=21)
 			title('Learning Rate:'+lr,fontsize=20)
                         subplot(2,len(lrs),len(lrs)+cpt)
-                        plot(all_test[i][0],color='b',alpha=0.5)
-                        plot(all_test[i][7],color='k',alpha=0.5)
+                        plot(all_test[i][0],color='b',alpha=0.5,linewidth=3)
+                        plot(all_test[i][7],color='k',alpha=0.5,linewidth=3)
 			if(lr==lrs[0]):
                                 ylabel('Test Accuracy',fontsize=21)
                         xlabel('Epoch',fontsize=19)
@@ -150,5 +150,13 @@ def plot_Ws(models,lrs,DATASET):
 
 
 plot_files(['resnetLarge'],lrs = ['0.0005'],DATASET='CIFAR100')
+plot_files(['smallCNN'],lrs = ['0.0001','0.0005','0.001'],DATASET='SVHN')
+plot_files(['smallCNN'],lrs = ['0.0001','0.0005','0.001'],DATASET='CIFAR')
+plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR100')
+plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR')
+plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='SVHN')
+
+
+
 #plot_Ws(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR100')
 

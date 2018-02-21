@@ -1,114 +1,39 @@
 from pylab import *
 import tensorflow as tf
-from sklearn.datasets import fetch_mldata
-from sklearn.cross_validation import train_test_split
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 execfile('utils.py')
 execfile('models.py')
 execfile('lasagne_tf.py')
 
-DATASET = sys.argv[-4]
-lr      = float(sys.argv[-3])
-
-if(int(sys.argv[-2])==0):
-	m = smallCNN
-	m_name = 'smallCNN'
-elif(int(sys.argv[-2])==1):
-	m = largeCNN
-	m_name = 'largeCNN'
-
-elif(int(sys.argv[-2])==2):
-        m = resnet_small
-        m_name = 'resnetSmall'
+DATASET = sys.argv[-1]
+lr      = 0.0005
 
 
-
-if(DATASET=='MNIST'):
-        batch_size = 50
-        mnist         = fetch_mldata('MNIST original')
-        x             = mnist.data.reshape(70000,1,28,28).astype('float32')
-        y             = mnist.target.astype('int32')
-        x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=10000,stratify=y)
-        input_shape   = (batch_size,28,28,1)
-	x_train = transpose(x_train,[0,2,3,1])
-	x_test  = transpose(x_test,[0,2,3,1])
-	c = 10
-        n_epochs = 150
-
-elif(DATASET == 'CIFAR'):
-        batch_size = 50
-        TRAIN,TEST = load_cifar(3)
-        x_train,y_train = TRAIN
-        x_test,y_test     = TEST
-        input_shape       = (batch_size,32,32,3)
-        x_train = transpose(x_train,[0,2,3,1])
-        x_test  = transpose(x_test,[0,2,3,1])
-	c=10
-        n_epochs = 150
-
-elif(DATASET == 'CIFAR100'):
-	batch_size = 100
-        TRAIN,TEST = load_cifar100(3)
-        x_train,y_train = TRAIN
-        x_test,y_test     = TEST
-        input_shape       = (batch_size,32,32,3)
-        x_train = transpose(x_train,[0,2,3,1])
-        x_test  = transpose(x_test,[0,2,3,1])
-        c=100
-        n_epochs = 200
-
-elif(DATASET=='IMAGE'):
-	batch_size=200
-        x,y           = load_imagenet()
-	x = x.astype('float32')
-	y = y.astype('int32')
-        x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=20000,stratify=y)
-        input_shape   = (batch_size,64,64,3)
-	c=200
-        n_epochs = 200
-
-else:
-        batch_size = 50
-        TRAIN,TEST = load_svhn()
-        x_train,y_train = TRAIN
-        x_test,y_test     = TEST
-        input_shape       = (batch_size,32,32,3)
-        x_train = transpose(x_train,[0,2,3,1])
-        x_test  = transpose(x_test,[0,2,3,1])
-	c=10
-        n_epochs = 150
-
-
-
-
-x_train          -= x_train.mean((1,2,3),keepdims=True)
-x_train          /= abs(x_train).max((1,2,3),keepdims=True)
-x_test           -= x_test.mean((1,2,3),keepdims=True)
-x_test           /= abs(x_test).max((1,2,3),keepdims=True)
-x_train           = x_train.astype('float32')
-x_test            = x_test.astype('float32')
-y_train           = array(y_train).astype('int32')
-y_test            = array(y_test).astype('int32')
  
-
-n_epochs=25
+x_train,x_test,y_train,y_test,c,n_epochs,input_shape=load_utility(DATASET)
+n_epochs=15
 p=permutation(len(x_train))
-def doit(DATASET,m_name,m,bn,bias):
-	name = DATASET+'_'+m_name+'bn'+str(bn)+'_b'+str(bias)+'_templates.pkl'
-	model1  = DNNClassifier(input_shape,m(bn=bn,n_classes=c,bias=bias),lr=lr,gpu=int(sys.argv[-1]),Q=0,l1=0.0)
+
+def doit(DATASET,m_name,m,bn,bias,l1,Q):
+	name = DATASET+'_'+m_name+'bn'+str(bn)+'_b'+str(bias)+'_l'+str(l1)+'_Q'+str(Q)+'_templates.pkl'
+	model1  = DNNClassifier(input_shape,m(bn=bn,n_classes=c,bias=bias),lr=lr,gpu=0,Q=Q,l1=l1)
 	train_loss,test_loss,W = model1.fit(x_train,y_train,x_test,y_test,n_epochs=n_epochs)
 	templates   = model1.get_templates(x_train[p[:500]])
-	predictions,Ax,bx = model1.get_template_statistics(x_train)
-	f = open('../../SAVE/QUADRATIC/'+name,'wb')
-	cPickle.dump([[templates,x_train[p[:500]],test_loss],[y_train,predictions,Ax,bx]],f)
+	predictions1,Ax1,bx1 = model1.get_template_statistics(x_train)
+        predictions2,Ax2,bx2 = model1.get_template_statistics(x_test)
+	f = open('/mnt/project2/rb42Data/ICML_TEMPLATE/'+name,'wb')
+	cPickle.dump([[templates,x_train[p[:500]],y_train[p[:500]]],[y_train[:len(Ax1)],predictions1,Ax1,bx1],[y_test[:len(Ax2)],predictions2,Ax2,bx2]],f)
 	f.close()
 
 
-doit(DATASET,m_name,m,0,0)
-doit(DATASET,m_name,m,0,1)
-doit(DATASET,m_name,m,1,0)
-doit(DATASET,m_name,m,1,1)
+#for q in [0,1]:
+for m,m_name in zip([smallRESNET],['smallRESNET']):
+	for l1 in [0]:
+#		doit(DATASET,m_name,m,0,0,l1,0)
+		doit(DATASET,m_name,m,0,1,l1,0)
+#		doit(DATASET,m_name,m,1,0,l1,0)
+		doit(DATASET,m_name,m,1,1,l1,0)
 
 
 
