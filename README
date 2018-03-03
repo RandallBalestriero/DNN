@@ -1,1 +1,12 @@
 python run_ortho.py DATASET LEARNING_RATE MODEL_No GPU_No
+
+
+run_representations for the clustering based on binary masks
+run_tempaltes for templates nad histogram of Ax and accuracy with and without bias
+run_cosine just for cosine similarities computation
+
+
+
+
+
+

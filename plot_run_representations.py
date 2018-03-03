@@ -94,17 +94,17 @@ def plot_files(DATASET,bn):
 #	maskstrain=maskstrain[:-1]
 	for i in xrange(len(maskstrain)):
 		maskstrain[i]=maskstrain[i].reshape((len(maskstrain[i]),-1))
-	for i in xrange(0):
+	for i in xrange(100):
 		compute_clusters(maskstrain,20+i,x_train,y_train)
 		savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'bn'+str(bn)+'_partitioning'+str(i)+'.png')
 		close()
 #	compute_accuracy(maskstrain,y_train,maskstest,y_test)
 
 
-for bn in [0,1]:
-#	plot_files('MNIST*smallCNN',bn)
+for bn in [1]:
+	plot_files('MNIST*smallCNN',bn)
 #	plot_files('MNIST*largeCNN',bn)
-#	plot_files('CIFAR*smallCNN',bn)
+	plot_files('CIFAR*smallCNN',bn)
 #	plot_files('CIFAR*largeCNN',bn)
 	plot_files('SVHN*smallCNN',bn)
 

@@ -118,6 +118,15 @@ def extract(a,i):
 	return array([a[j] for j in xrange(len(a)) if i!=j])
 
 
+def cosine_similarity(a,b):
+	return (a*b).sum()/(sqrt((a**2).sum()+0.0000000001)+sqrt((b**2).sum()+0.0000000001))
+
+def extract2(a,i):
+        c=array([a[j] for j in xrange(len(a)) if i!=j])
+	return array([cosine_similarity(k,a[i]) for k in c])
+
+
+
 
 def plot_files(DATASET,Q,l1):
 	As1=[]
@@ -139,7 +148,7 @@ def plot_files(DATASET,Q,l1):
 		[mean((Ax110+bx110).argmax(1)==predsy110)*100,mean((Ax210+bx210).argmax(1)==predsy210)*100,mean(Ax110.argmax(1)==predsy110)*100,mean(Ax210.argmax(1)==predsy210)*100],
 		[mean((Ax111+bx111).argmax(1)==predsy111)*100,mean((Ax211+bx211).argmax(1)==predsy211)*100,mean(Ax111.argmax(1)==predsy111)*100,mean(Ax211.argmax(1)==predsy211)*100]]), tablefmt="latex", floatfmt=".2f")
 
-	for i in xrange(100):
+	for i in xrange(0):
 		dd=dict()
 		figure(figsize=(20,7))
 		subplots(x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200,0,i+20,0)
@@ -187,6 +196,7 @@ def plot_files(DATASET,Q,l1):
 	tight_layout()
 	savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_templateshistogram.png')
 	close()
+####################################################################################################################################################################
         figure(figsize=(17,5))
         subplot(1,4,1)
 	vn = concatenate([extract(Ax100[i],predsy100[i]) for i in xrange(len(Ax100))])
@@ -225,8 +235,9 @@ def plot_files(DATASET,Q,l1):
         dohist(Ax101,predsy101)
 	axvline(x=0,color='k',linewidth=2)
 	tight_layout()
-	savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_croppedtemplateshistogram.png')
+	savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_01croppedtemplateshistogram.png')
 	close()
+##########################
         figure(figsize=(5,5))
         subplot(1,1,1)
         vn = concatenate([extract(Ax101[i],predsy101[i]) for i in xrange(len(Ax101))])
@@ -235,8 +246,29 @@ def plot_files(DATASET,Q,l1):
         hist(vn,color='r',bins=200,alpha=0.5)
         axvline(x=0,color='k',linewidth=2)
         tight_layout()
-        savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_croppedbimodaltemplateshistogram.png')
+        savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_01croppedbimodaltemplateshistogram.png')
         close()
+##########################
+        figure(figsize=(5,5))
+        subplot(1,1,1)
+        dohist(Ax111,predsy111)
+        axvline(x=0,color='k',linewidth=2)
+        tight_layout()
+        savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_11croppedtemplateshistogram.png')
+        close()
+##########################
+        figure(figsize=(5,5))
+        subplot(1,1,1)
+        vn = concatenate([extract(Ax111[i],predsy111[i]) for i in xrange(len(Ax111))])
+        vp = Ax111[range(len(Ax111)),predsy111]
+        hist(vp,color='g',bins=200,alpha=0.5)
+        hist(vn,color='r',bins=200,alpha=0.5)
+        axvline(x=0,color='k',linewidth=2)
+        tight_layout()
+        savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_11croppedbimodaltemplateshistogram.png')
+        close()
+
+
 
 
 
@@ -247,18 +279,17 @@ def plot_files(DATASET,Q,l1):
 #plot_files('MNIST*smallCNN',Q=0,l1=0)
 #print 'MNIST SMALLCNN L1'
 #plot_files('MNIST*smallCNN',Q=0,l1=1)
-#print 'MNIST LARGECNN L0'
-#plot_files('MNIST*largeCNN',Q=0,l1=0)
+print 'MNIST LARGECNN L0'
+plot_files('MNIST*largeCNN',Q=0,l1=0)
 #print 'MNIST LARGECNN L1'
 #plot_files('MNIST*largeCNN',Q=0,l1=1)
 
-#print 'CIFAR SMALLCNN L0'
+print 'CIFAR SMALLCNN L0'
 #plot_files('CIFAR*smallCNN',Q=0,l1=0)
-#print 'CIFAR SMALLCNN L1'
+print 'CIFAR SMALLCNN L1'
 #plot_files('CIFAR*smallCNN',Q=0,l1=1)
-print 'CIFAR LARGECNN L0'
-plot_files('CIFAR*smallRESNET',Q=0,l1=0)
-#print 'CIFAR LARGECNN L1'
+#plot_files('CIFAR*smallRESNET',Q=0,l1=0)
+print 'CIFAR LARGECNN L1'
 #plot_files('CIFAR*largeCNN',Q=0,l1=1)
 
 
