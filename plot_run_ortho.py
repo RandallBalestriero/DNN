@@ -2,7 +2,7 @@ import cPickle
 from pylab import *
 import glob
 import matplotlib as mpl
-label_size = 12
+label_size = 26
 mpl.rcParams['xtick.labelsize'] = label_size 
 mpl.rcParams['ytick.labelsize'] = label_size
 
@@ -88,11 +88,11 @@ def plot_files(models,lrs,DATASET):
                 	plot(Cs,100*dmean,'ko')
                 	fill_between(Cs,100*dmean+100*dstd,100*dmean-100*dstd,alpha=0.5,facecolor='gray')
                         title('Learning Rate:'+lr,fontsize=20)
-                	xlabel(r'$\gamma$',fontsize=19)
+                	xlabel(r'$\gamma$',fontsize=27)
                 	if(lr==lrs[0]):
-                	        ylabel('Test Accuracy',fontsize=21)
+                	        ylabel('Test Accuracy',fontsize=27)
                 	cpt+=1
-        	suptitle(DATASET+' '+model,fontsize=18)
+#        	suptitle(DATASET+' '+model,fontsize=18)
 		savefig(DATASET+'_'+model+'_histo.png')
 		close()
 		figure(figsize=(18,8))
@@ -101,18 +101,18 @@ def plot_files(models,lrs,DATASET):
 			subplot(2,len(lrs),cpt)
 			semilogy(all_train[i][0],'b',alpha=0.5)
                         semilogy(all_train[i][7],'k',alpha=0.5)
-			xlabel('Batch',fontsize=19)
+#			xlabel('Batch',fontsize=19)
                         if(lr==lrs[0]):
-                                ylabel(r'$\log (\mathcal{L}_{CE})$',fontsize=21)
-			title('Learning Rate:'+lr,fontsize=20)
+                                ylabel(r'$\log (\mathcal{L}_{CE})$',fontsize=27)
+			title('Learning Rate:'+lr,fontsize=22)
                         subplot(2,len(lrs),len(lrs)+cpt)
-                        plot(all_test[i][0],color='b',alpha=0.5,linewidth=3)
-                        plot(all_test[i][7],color='k',alpha=0.5,linewidth=3)
+                        plot(all_test[i][0]*100,color='b',alpha=0.5,linewidth=3)
+                        plot(all_test[i][7]*100,color='k',alpha=0.5,linewidth=3)
 			if(lr==lrs[0]):
-                                ylabel('Test Accuracy',fontsize=21)
-                        xlabel('Epoch',fontsize=19)
+                                ylabel('Test Accuracy',fontsize=27)
+#                        xlabel('Epoch',fontsize=19)
 			cpt+=1
-                suptitle(DATASET+' '+model,fontsize=18)
+#                suptitle(DATASET+' '+model,fontsize=18)
                 savefig(DATASET+'_'+model+'_loss.png')
 		close()
 #	show()	
@@ -153,8 +153,8 @@ plot_files(['resnetLarge'],lrs = ['0.0005'],DATASET='CIFAR100')
 plot_files(['smallCNN'],lrs = ['0.0001','0.0005','0.001'],DATASET='SVHN')
 plot_files(['smallCNN'],lrs = ['0.0001','0.0005','0.001'],DATASET='CIFAR')
 plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR100')
-plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR')
-plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='SVHN')
+###plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR')
+###plot_files(['largeCNN'],lrs = ['0.0005'],DATASET='SVHN')
 
 
 

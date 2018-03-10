@@ -190,11 +190,16 @@ class DenseLayer:
                 tf.add_to_collection("regularizable",self.W)
 		self.output_shape = (incoming.output_shape[0],n_output)
 		if(bias and bn==0):
-			self.output       = nonlinearity(tf.matmul(inputf,self.W)+self.b)
+			input_ = tf.matmul(inputf,self.W)+self.b
 		elif(bn==0):
-                        self.output       = nonlinearity(tf.matmul(inputf,self.W))
+                        input_ = tf.matmul(inputf,self.W)
 		else:
-			self.output       = nonlinearity(tf.layers.batch_normalization(tf.matmul(inputf,self.W),training=training,fused=True))
+			input_ = tf.layers.batch_normalization(tf.matmul(inputf,self.W),training=training,fused=True)
+                self.mask         = tf.greater(input_,0)
+                self.output       = nonlinearity(input_)
+
+
+
 
 
 class NNDenseLayer:
@@ -363,7 +368,7 @@ class NNConv2DLayer:
 
 
 class Block:
-	def __init__(self,incoming,n_filters1,stride,test,bias,bn=1):
+	def __init__(self,incoming,n_filters1,stride,test,bias,bn=1,nonlinearity=tf.nn.relu):
 		input_shape = incoming.output_shape
 		input= incoming.output
                 self.output_shape = (incoming.output_shape[0],incoming.output_shape[1]/stride,incoming.output_shape[2]/stride,n_filters1)
@@ -371,13 +376,13 @@ class Block:
                 self.W1     = tf.Variable(init((3,3,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)
                 self.W11    = tf.Variable(init((3,3,n_filters1,n_filters1)),name='W11_',trainable=True)
 		if(bn):
-			input1 = tf.nn.relu(tf.layers.batch_normalization(tf.nn.conv2d(input,self.W1,strides=[1,1,1,1],padding='SAME'),training=test,fused=True))
+			input1 = nonlinearity(tf.layers.batch_normalization(tf.nn.conv2d(input,self.W1,strides=[1,1,1,1],padding='SAME'),training=test,fused=True))
                         input2 = tf.layers.batch_normalization(tf.nn.conv2d(input1,self.W11,strides=[1,1,1,1],padding='SAME'),training=test,fused=True)
 #			input2 = tf.nn.conv2d(tf.nn.relu(tf.layers.batch_normalization(input1,training=test,fused=True)),self.W11,strides=[1,1,1,1],padding='SAME')
 		else:
 			self.b1 = tf.Variable(init((1,1,1,n_filters1)),name='b1_',trainable=True)
 #                        self.b11 = tf.Variable(init((1,1,1,n_filters1)),name='b1_',trainable=True)
-                        input1 = tf.nn.relu(tf.nn.conv2d(input,self.W1,strides=[1,1,1,1],padding='SAME')+self.b1)
+                        input1 = nonlinearity(tf.nn.conv2d(input,self.W1,strides=[1,1,1,1],padding='SAME')+self.b1)
                         input2 = tf.nn.conv2d(input1,self.W11,strides=[1,1,1,1],padding='SAME')
                 if(stride==2):
                     self.W0     = tf.Variable(init((1,1,incoming.output_shape[3],n_filters1)),name='W1_',trainable=True)

@@ -4,7 +4,8 @@ python run_ortho.py DATASET LEARNING_RATE MODEL_No GPU_No
 run_representations for the clustering based on binary masks
 run_tempaltes for templates nad histogram of Ax and accuracy with and without bias
 run_cosine just for cosine similarities computation
-
+run_partitioning_double is for the partition and the splines, takes as sys args {relu,lrelu,abs}, nhidden1 nhidden2
+run_ctemplates like run_templates but just for comparisons between models
 
 
 

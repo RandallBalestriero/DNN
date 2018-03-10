@@ -43,8 +43,8 @@ class DNNClassifier(object):
 		self.session.run(tf.global_variables_initializer())
 	def _fit(self,X,y,indices,update_time=10):
 		self.e+=1
-                if(self.e==60 or self.e==120 or self.e==160):
-                    self.lr/=5
+#                if(self.e==60 or self.e==120 or self.e==160):
+#                self.lr/=sqrt(self.e+1)
         	n_train    = X.shape[0]/self.batch_size
         	train_loss = []
         	for i in xrange(n_train):
@@ -147,6 +147,16 @@ class DNNClassifier(object):
                 for j in xrange(len(templates)):
                         templates[j]=concatenate(templates[j],axis=0).astype('bool')
                 return templates
+	def get_feature_maps(self,X):
+                templates = [[] for i in xrange(len(self.layers)-2)]
+                n_batch   = X.shape[0]/self.batch_size
+                for i in xrange(n_batch):
+                        for j in xrange(len(templates)):
+                                templates[j].append(self.session.run(self.layers[j+1].output,feed_dict={self.x:X[i*self.batch_size:(i+1)*self.batch_size].astype('float32'),self.test_phase:False}))
+                for j in xrange(len(templates)):
+                        templates[j]=concatenate(templates[j],axis=0)
+                return templates
+
         def get_clusters(self,X):
                 templates = []
                 n_batch   = X.shape[0]/self.batch_size
@@ -177,6 +187,30 @@ class densesimple:
 #                masks.append(tf.greater(layers[-1].output,0))
                 layers.append(DenseLayer(layers[-1],self.n_classes,test,bn=0,nonlinearity=lambda x:x,bias=0))
                 return layers,masks
+
+
+
+class densedouble:
+        def __init__(self,bn=1,n_classes=10,augmentation=0,p=0,bias=1,nonlinearity=tf.nn.relu,Ns=[4,4,4]):
+                self.nonlinearity = nonlinearity
+                self.bn = bn
+                self.augmentation = augmentation
+                self.Ns = Ns
+                self.p = p
+                self.bias=bias
+                self.n_classes = n_classes
+        def get_layers(self,input_variable,input_shape,test):
+                layers = [InputLayer(input_shape,input_variable)]
+                masks  = []
+                if(self.augmentation):
+                    layers.append(Generator(layers[-1],test=test,p=self.p))
+                layers.append(DenseLayer(layers[-1],self.Ns[0],test,nonlinearity=self.nonlinearity,bias=self.bias,bn=self.bn))
+                masks.append(layers[-1].mask)
+                layers.append(DenseLayer(layers[-1],self.Ns[1],test,nonlinearity=self.nonlinearity,bias=self.bias,bn=self.bn))
+                masks.append(layers[-1].mask)
+                layers.append(DenseLayer(layers[-1],self.n_classes,test,bn=0,nonlinearity=lambda x:x,bias=0))
+                return layers,masks
+
 
 
 
@@ -237,6 +271,37 @@ class smallCNN:
                 masks.append(tf.gradients(layers[-1].output,layers[-2].output)[0])
                 layers.append(DenseLayer(layers[-1],self.n_classes,training=test,bn=0,nonlinearity=lambda x:x,bias=0))
                 return layers,masks
+
+
+class smallCNNnopool:
+        def __init__(self,bn=1,n_classes=10,augmentation=0,p=0,bias=1,nonlinearity=tf.nn.relu):
+                self.nonlinearity = nonlinearity
+                self.bn = bn
+                self.augmentation = augmentation
+                self.p = p
+                self.bias=bias
+                self.n_classes = n_classes
+        def get_layers(self,input_variable,input_shape,test):
+                layers = [InputLayer(input_shape,input_variable)]
+                masks  = []
+                if(self.augmentation):
+                    layers.append(Generator(layers[-1],test=test,p=self.p))
+                layers.append(Conv2DLayer(layers[-1],32,3,test=test,bn=self.bn,bias=self.bias,nonlinearity=self.nonlinearity))
+                masks.append(tf.greater(layers[-1].output,0))
+                layers.append(Conv2DLayer(layers[-1],64,3,test=test,bn=self.bn,bias=self.bias,nonlinearity=self.nonlinearity))
+                masks.append(tf.greater(layers[-1].output,0))
+                layers.append(Conv2DLayer(layers[-1],128,1,test=test,bn=self.bn,bias=self.bias,nonlinearity=self.nonlinearity))
+                masks.append(tf.greater(layers[-1].output,0))
+                layers.append(DenseLayer(layers[-1],self.n_classes,training=test,bn=0,nonlinearity=lambda x:x,bias=0))
+                return layers,masks
+
+
+
+
+
+
+
+
 
 
 
@@ -307,25 +372,26 @@ class smallRESNET:
                 self.bn = bn
                 self.augmentation = augmentation
                 self.p = p
+		self.nonlinearity = nonlinearity
 		self.bias = bias
                 self.n_classes = n_classes
         def get_layers(self,input_variable,input_shape,test):
-                depth = 7
+                depth = 2
                 k = 1
                 layers = [InputLayer(input_shape,input_variable)]
                 if(self.augmentation):
                     layers.append(Generator(layers[-1],test=test,p=self.p))
-                layers.append(Conv2DLayer(layers[-1],16*k,3,test=test,bn=0,pad='same',nonlinearity= lambda x:x))
+                layers.append(Conv2DLayer(layers[-1],16*k,3,test=test,bn=self.bn,pad='same',nonlinearity= lambda x:x))
                 for i in xrange(depth):
-                    layers.append(Block(layers[-1],16*k,1,test=test,bias=self.bias,bn=self.bn))# Resnet 4-4 straightened bottleneck
-                layers.append(Block(layers[-1],16*k*2,2,test=test,bias=self.bias,bn=self.bn))
+                    layers.append(Block(layers[-1],16*k,1,test=test,bias=self.bias,bn=self.bn,nonlinearity=self.nonlinearity))# Resnet 4-4 straightened bottleneck
+                layers.append(Block(layers[-1],16*k*2,2,test=test,bias=self.bias,bn=self.bn,nonlinearity=self.nonlinearity))
                 for i in xrange(depth-1):
-                    layers.append(Block(layers[-1],16*k*2,1,test=test,bias=self.bias,bn=self.bn))
-                layers.append(Block(layers[-1],16*k*4,2,test=test,bias=self.bias,bn=self.bn))
+                    layers.append(Block(layers[-1],16*k*2,1,test=test,bias=self.bias,bn=self.bn,nonlinearity=self.nonlinearity))
+                layers.append(Block(layers[-1],16*k*4,2,test=test,bias=self.bias,bn=self.bn,nonlinearity=self.nonlinearity))
                 for i in xrange(depth-1):
-                    layers.append(Block(layers[-1],16*k*4,1,test=test,bias=self.bias,bn=self.bn))
+                    layers.append(Block(layers[-1],16*k*4,1,test=test,bias=self.bias,bn=self.bn,nonlinearity=self.nonlinearity))
                 layers.append(GlobalPoolLayer(layers[-1]))
-                layers.append(DenseLayer(layers[-1],self.n_classes,nonlinearity=lambda x:x,bias=0))
+                layers.append(DenseLayer(layers[-1],self.n_classes,test,nonlinearity=lambda x:x,bias=0))
                 return layers,0
 
 
@@ -365,7 +431,7 @@ class largeCNN:
                 masks.append(tf.greater(layers[-1].output,0))
                 layers.append(Pool2DLayer(layers[-1],2))
                 masks.append(tf.gradients(layers[-1].output,layers[-2].output)[0])
-                layers.append(DenseLayer(layers[-1],self.n_classes,nonlinearity=lambda x:x,bias=0))
+                layers.append(DenseLayer(layers[-1],self.n_classes,training=test,nonlinearity=lambda x:x,bias=0,bn=0))
                 return layers,masks
 
 class NNlargeCNN:

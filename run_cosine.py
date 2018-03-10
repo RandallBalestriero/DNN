@@ -28,7 +28,7 @@ def doit(DATASET,m_name,m,bn,bias,l1,Q):
 
 
 #for q in [0,1]:
-for m,m_name in zip([smallCNN,largeCNN],['smallCNN','largeCNN']):
+for m,m_name in zip([largeCNN],['largeCNN']):
 	for l1 in [0]:
 #		doit(DATASET,m_name,m,0,0,l1,0)
 		doit(DATASET,m_name,m,0,1,l1,0)
