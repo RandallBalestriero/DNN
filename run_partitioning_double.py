@@ -41,7 +41,7 @@ def doit(masks,iiii):
 		Z=abs(Z[1:,1:]-Z[1:,:-1])+abs(Z[1:,1:]-Z[:-1,1:])+abs(Z[1:,:-1]-Z[:-1,1:])+abs(Z[:-1,1:]-Z[1:,:-1])
 		Z=(abs(Z)>1).astype('float32')
 		Z=(convolve2d(Z,ones((4,4)),'same')>1).astype('float32')
-	        contourf(xx[1:,1:], yy[1:,1:], 1-Z, alpha=0.95,cmap='gray',interpolation='nearest')
+	        contourf(xx[1:,1:], yy[1:,1:], (Z)*100, alpha=0.8,cmap='binary',interpolation='nearest')
 	else:
 		Z=Z[1:,1:]
 		contourf(xx[1:,1:], yy[1:,1:], 1-Z, alpha=0.25)

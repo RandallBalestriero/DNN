@@ -61,6 +61,8 @@ class DNNClassifier(object):
                             print i,n_train,train_loss[-1]
         	return train_loss
         def fit(self,X,y,X_test,y_test,n_epochs=5,return_train_accu=0):
+		if(n_epochs==0):
+			return [0],[0],[]
 		train_loss = []
 		train_accu = []
 		test_loss  = []
@@ -77,7 +79,7 @@ class DNNClassifier(object):
                 	        acc1+=self.session.run(self.accuracy,feed_dict={self.x:X_test[self.batch_size*j:self.batch_size*(j+1)],
 						self.y_:y_test[self.batch_size*j:self.batch_size*(j+1)],self.test_phase:False})
                 	test_loss.append(acc1/n_test)
-			if(return_train_accu):
+			if(1):#return_train_accu):
 		                n_train    = X.shape[0]/self.batch_size
 	                        acc1 = 0.0
 	                        for j in xrange(n_train):
@@ -241,6 +243,33 @@ class denseCNN:
 #                masks.append(tf.greater(layers[-1].output,0))
                 layers.append(DenseLayer(layers[-1],self.n_classes,test,bn=0,nonlinearity=lambda x:x,bias=0))
 		return layers,masks
+
+
+class DenseCNN:
+        def __init__(self,bn=1,n_classes=10,augmentation=0,p=0,bias=1,nonlinearity=tf.nn.relu):
+                self.nonlinearity = nonlinearity
+                self.bn = bn
+                self.augmentation = augmentation
+                self.p = p
+                self.bias=bias
+                self.n_classes = n_classes
+        def get_layers(self,input_variable,input_shape,test):
+                layers = [InputLayer(input_shape,input_variable)]
+                masks  = []
+                if(self.augmentation):
+                    layers.append(Generator(layers[-1],test=test,p=self.p))
+                layers.append(Conv2DLayer(layers[-1],32,3,test=test,bn=self.bn,bias=self.bias,nonlinearity=self.nonlinearity))
+                masks.append(tf.greater(layers[-1].output,0))
+                layers.append(Pool2DLayer(layers[-1],2))
+                masks.append(tf.gradients(layers[-1].output,layers[-2].output)[0])
+                layers.append(Conv2DLayer(layers[-1],64,3,test=test,bn=self.bn,bias=self.bias,nonlinearity=self.nonlinearity))
+                masks.append(tf.greater(layers[-1].output,0))
+                layers.append(Pool2DLayer(layers[-1],2))
+                masks.append(tf.gradients(layers[-1].output,layers[-2].output)[0])
+                layers.append(DenseLayer(layers[-1],128,training=test,bn=1))
+                masks.append(tf.greater(layers[-1].output,0))
+                layers.append(DenseLayer(layers[-1],self.n_classes,training=test,bn=0,nonlinearity=lambda x:x,bias=0))
+                return layers,masks
 
 
 

@@ -21,7 +21,31 @@ def distance2(x,xs):
 
 
 
-names = ['ReLU 1','Max-Pool 1','ReLU 2','Max-Pool 2','ReLU 3','Max-Pool 3']
+#names = ['ReLU 1','Max-Pool 1','ReLU 2','Max-Pool 2','ReLU 3','Max-Pool 3']
+
+names = ['ReLU 1','Max-Pool 1','ReLU 2','Max-Pool 2','ReLU 3']
+
+
+def onehotback(k,N):
+	z=ones(N)
+	z[k]=0
+	return z
+
+def compute_accu(templates,y):
+        clusters = [[] for i in xrange(len(templates))]
+	accu     = []
+        for i in xrange(len(templates)):
+		accu.append(0)
+		for j in xrange(len(y)):
+			print j
+			if(i%2==0):
+		                distances = distance1(templates[i][j],templates[i])
+			else:
+	                        distances = distance2(templates[i][j],templates[i])
+			best = argmax(-distances*onehotback(j,len(y)))#argsort(distances)[:16]
+			accu[i]+=int32(y[j]==y[best])#int32(y[best[0]]==y[best[1]])
+		print "LAYER",i,accur[i]/(1.0*len(y))
+
 
 def compute_clusters(templates,j,x,y):
         clusters = [[] for i in xrange(len(templates))]
@@ -94,20 +118,24 @@ def plot_files(DATASET,bn):
 #	maskstrain=maskstrain[:-1]
 	for i in xrange(len(maskstrain)):
 		maskstrain[i]=maskstrain[i].reshape((len(maskstrain[i]),-1))
+#	compute_accu(maskstrain,y_train)
 	for i in xrange(100):
 		compute_clusters(maskstrain,20+i,x_train,y_train)
 		savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'bn'+str(bn)+'_partitioning'+str(i)+'.png')
 		close()
 #	compute_accuracy(maskstrain,y_train,maskstest,y_test)
 
+for n in [0,295]:
+	for random in [0,1]:
+		plot_files('MNIST_epochs'+str(n)+'_random'+str(random)+'*DenseCNN',1)
+                plot_files('SVHN_epochs'+str(n)+'_random'+str(random)+'*DenseCNN',1)
+                plot_files('CIFAR_epochs'+str(n)+'_random'+str(random)+'*DenseCNN',1)
 
-for bn in [1]:
-	plot_files('MNIST*smallCNN',bn)
-#	plot_files('MNIST*largeCNN',bn)
-	plot_files('CIFAR*smallCNN',bn)
-#	plot_files('CIFAR*largeCNN',bn)
-	plot_files('SVHN*smallCNN',bn)
+#for bn in [1]:
+#	plot_files('MNIST*smallCNN',bn)
+#	plot_files('CIFAR*smallCNN',bn)
+#	plot_files('SVHN*smallCNN',bn)
 
 
-#plot_Ws(['largeCNN'],lrs = ['0.0005'],DATASET='CIFAR100')
+
 

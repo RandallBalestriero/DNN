@@ -12,7 +12,7 @@ lr      = 0.0005
 
  
 x_train,x_test,y_train,y_test,c,n_epochs,input_shape=load_utility(DATASET)
-n_epochs=70
+n_epochs=270
 p=permutation(len(x_train))
 
 def doit(DATASET,m_name,m):

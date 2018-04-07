@@ -128,6 +128,32 @@ def extract2(a,i):
 
 
 
+def plot_templates(DATASET):
+	As1=[]
+	As2=[]
+	bs1=[]
+	bs2=[]
+	files = glob.glob('/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'*templates*pkl')
+	x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200=loadfile(files[0])
+	for i in xrange(1):
+		dd=dict()
+		figure(figsize=(20,4))
+		subplots(x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200,0,i+20,0)
+		tight_layout()
+		savefig(DATASET+'_templates'+str(i)+'.png')
+		close()
+                figure(figsize=(9,4))
+                d01=subplots(x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200,0,i+20,1)
+                tight_layout()
+                savefig(DATASET+'_croppedtemplates'+str(i)+'.png')
+		close()
+
+
+
+
+
+
+
 def plot_files(DATASET,Q,l1):
 	As1=[]
 	As2=[]
@@ -137,10 +163,13 @@ def plot_files(DATASET,Q,l1):
 	print files,'/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn0_b0_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl'
 	x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200=loadfile(files[0])
         files = glob.glob('/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn0_b1_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl')
+	print files,'/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn0_b1_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl'
         x01,y01,templates01,predsy101,preds101,Ax101,bx101,predsy201,preds201,Ax201,bx201=loadfile(files[0])
         files = glob.glob('/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn1_b0_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl')
+	print files,'/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn1_b0_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl'
         x10,y10,templates10,predsy110,preds110,Ax110,bx110,predsy210,preds210,Ax210,bx210=loadfile(files[0])
         files = glob.glob('/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn1_b1_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl')
+	print files,'/mnt/project2/rb42Data/ICML_TEMPLATE/'+DATASET+'bn1_b1_l'+str(l1)+'*Q'+str(Q)+'*templates*pkl'
         x11,y11,templates11,predsy111,preds111,Ax111,bx111,predsy211,preds211,Ax211,bx211=loadfile(files[0])
 
         print tabulate(asarray([[mean((Ax100+bx100).argmax(1)==predsy100)*100,mean((Ax200+bx200).argmax(1)==predsy200)*100,mean(Ax100.argmax(1)==predsy100)*100,mean(Ax200.argmax(1)==predsy200)*100],
@@ -148,7 +177,7 @@ def plot_files(DATASET,Q,l1):
 		[mean((Ax110+bx110).argmax(1)==predsy110)*100,mean((Ax210+bx210).argmax(1)==predsy210)*100,mean(Ax110.argmax(1)==predsy110)*100,mean(Ax210.argmax(1)==predsy210)*100],
 		[mean((Ax111+bx111).argmax(1)==predsy111)*100,mean((Ax211+bx211).argmax(1)==predsy211)*100,mean(Ax111.argmax(1)==predsy111)*100,mean(Ax211.argmax(1)==predsy211)*100]]), tablefmt="latex", floatfmt=".2f")
 
-	for i in xrange(0):
+	for i in xrange(100):
 		dd=dict()
 		figure(figsize=(20,7))
 		subplots(x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200,0,i+20,0)
@@ -157,25 +186,18 @@ def plot_files(DATASET,Q,l1):
                 subplots(x11,y11,templates11,predsy111,preds111,Ax111,bx111,predsy211,preds211,Ax211,bx211,33,i+20,0)
 		tight_layout()
 		savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_templates'+str(i)+'.png')
-#		dd['image']=x00[i+20]
-#		dd['templates00']=templates00[i+20]
-#                dd['templates01']=templates01[i+20]
-#                dd['templates10']=templates10[i+20]
-#                dd['templates11']=templates11[i+20]
-#		savemat(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_templates'+str(i)+'.mat',dd)
 		close()
                 figure(figsize=(9,4))
-#                d00=subplots(x00,y00,templates00,predsy100,preds100,Ax100,bx100,predsy200,preds200,Ax200,bx200,0,i+20,1)
                 d01=subplots(x01,y01,templates01,predsy101,preds101,Ax101,bx101,predsy201,preds201,Ax201,bx201,0,i+20,1)
-#                d10=subplots(x10,y10,templates10,predsy110,preds110,Ax100,bx110,predsy210,preds210,Ax210,bx210,6,i+20,1)
-#                d11=subplots(x11,y11,templates11,predsy111,preds111,Ax111,bx111,predsy211,preds211,Ax211,bx211,9,i+20,1)
-#		savemat(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_templates00'+str(i)+'.mat',d00)
-#                savemat(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_croppedtemplates01'+str(i)+'.mat',d01)
-#                savemat(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_templates10'+str(i)+'.mat',d10)
-#                savemat(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_templates11'+str(i)+'.mat',d11)
                 tight_layout()
                 savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_croppedtemplates'+str(i)+'.png')
 		close()
+                figure(figsize=(9,4))
+                d01=subplots(x11,y11,templates11,predsy111,preds111,Ax111,bx111,predsy211,preds211,Ax211,bx211,0,i+20,1)
+                tight_layout()
+                savefig(DATASET.split('*')[0]+'_'+DATASET.split('*')[1]+'_l'+str(l1)+'_Q'+str(Q)+'_croppedtemplatesbn'+str(i)+'.png')
+		close()
+	return 0
 	figure(figsize=(17,5))
 	subplot(1,4,1)
        	dohist(Ax100,predsy100)
@@ -278,16 +300,27 @@ def plot_files(DATASET,Q,l1):
 #print 'MNIST SMALLCNN L0'
 #plot_files('MNIST*smallCNN',Q=0,l1=0)
 #print 'MNIST SMALLCNN L1'
-#plot_files('MNIST*smallCNN',Q=0,l1=1)
-print 'MNIST LARGECNN L0'
 plot_files('MNIST*largeCNN',Q=0,l1=0)
+plot_files('MNIST*denseCNN',Q=0,l1=0)
+plot_files('SVHN*largeCNN',Q=0,l1=0)
+plot_files('SVHN*denseCNN',Q=0,l1=0)
+plot_files('CIFAR*largeCNN',Q=0,l1=0)
+plot_files('CIFAR*denseCNN',Q=0,l1=0)
+
+
+
+#print 'MNIST LARGECNN L0'
+#plot_templates('CIFAR_largeCNNbn1_b1_l0_Q0')
+#print 'CIFAR LARGECNN L0'
+#plot_templates('MNIST_largeCNNbn1_b1_l0_Q0')
+
 #print 'MNIST LARGECNN L1'
 #plot_files('MNIST*largeCNN',Q=0,l1=1)
 
 print 'CIFAR SMALLCNN L0'
 #plot_files('CIFAR*smallCNN',Q=0,l1=0)
 print 'CIFAR SMALLCNN L1'
-#plot_files('CIFAR*smallCNN',Q=0,l1=1)
+#plot_files('CIFAR*smallCNCIFAR_largeCNNbn1_b1_l0_Q0_templates.pklN',Q=0,l1=1)
 #plot_files('CIFAR*smallRESNET',Q=0,l1=0)
 print 'CIFAR LARGECNN L1'
 #plot_files('CIFAR*largeCNN',Q=0,l1=1)

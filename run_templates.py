@@ -12,7 +12,10 @@ lr      = 0.0005
 
  
 x_train,x_test,y_train,y_test,c,n_epochs,input_shape=load_utility(DATASET)
-n_epochs=15
+x_train = x_train.mean(3,keepdims=True)
+x_test  = x_test.mean(3,keepdims=True)
+input_shape = (input_shape[0],input_shape[1],input_shape[2],1)
+n_epochs=295
 p=permutation(len(x_train))
 
 def doit(DATASET,m_name,m,bn,bias,l1,Q):
@@ -28,11 +31,11 @@ def doit(DATASET,m_name,m,bn,bias,l1,Q):
 
 
 #for q in [0,1]:
-for m,m_name in zip([smallRESNET],['smallRESNET']):
+for m,m_name in zip([DenseCNN,largeCNN],['denseCNN','largeCNN']):
 	for l1 in [0]:
-#		doit(DATASET,m_name,m,0,0,l1,0)
+		doit(DATASET,m_name,m,0,0,l1,0)
 		doit(DATASET,m_name,m,0,1,l1,0)
-#		doit(DATASET,m_name,m,1,0,l1,0)
+		doit(DATASET,m_name,m,1,0,l1,0)
 		doit(DATASET,m_name,m,1,1,l1,0)
 
 
